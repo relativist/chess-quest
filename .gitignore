@@ -1,0 +1,73 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+build/
+
+# Production / tool caches
+.cache/
+.turbo/
+.vercel/
+coverage/
+.nyc_output/
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Generated Prisma client
+src/generated/prisma/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local app data and databases
+.data/
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor / IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Playwright / MCP local captures
+.playwright-mcp/
+playwright-report/
+test-results/
+
+# Scratch and ad-hoc debug artifacts
+1.txt
+bug/
+battle-*.png
+pre-battle-dialog-compact.png
+
+# Docker local overrides
+compose.override.yml
+docker-compose.override.yml

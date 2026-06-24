@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  PLAYER
+  BOARD_EDITOR
+  MAP_EDITOR
+}
+
+enum PlayerColor {
+  WHITE
+  BLACK
+}
+
+enum GameOutcome {
+  IN_PROGRESS
+  PLAYER_WIN
+  ENGINE_WIN
+  DRAW
+  ENGINE_ERROR
+  ABANDONED
+}
+
+enum VictoryReason {
+  CHECKMATE
+  ENGINE_SURRENDER
+  CARD_OBJECTIVE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  login        String   @unique
+  email        String?  @unique
+  passwordHash String
+  displayName  String
+  role         UserRole @default(PLAYER)
+  victoryScore Int      @default(0)
+  gold         Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  boardTemplates BoardTemplate[]
+  maps           QuestMap[]
+  progress       CardProgress[]
+  gameSessions   GameSession[]
+
+  @@index([victoryScore])
+}
+
+model BoardTemplate {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String   @unique
+  description String?
+  fen         String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  cards        QuestCard[]
+  gameSessions GameSession[]
+
+  @@index([createdById])
+}
+
+model QuestMap {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String?
+  order       Int      @unique
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  cards QuestCard[]
+
+  @@index([isPublished, order])
+  @@index([createdById])
+}
+
+model QuestCard {
+  id                   String   @id @default(cuid())
+  slug                 String   @unique
+  order                Int
+  title                String
+  text                 String   @db.Text
+  congratulationsText  String   @default("") @db.Text
+  objective            Json?
+  startingFen          String?  @db.Text
+  difficulty           Int      @db.SmallInt
+  rewardGold           Int
+  rewardScore          Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  mapId String
+  map   QuestMap @relation(fields: [mapId], references: [id], onDelete: Cascade)
+
+  boardTemplateId String?
+  boardTemplate   BoardTemplate? @relation(fields: [boardTemplateId], references: [id], onDelete: SetNull)
+
+  progress     CardProgress[]
+  gameSessions GameSession[]
+
+  @@unique([mapId, order])
+  @@index([mapId])
+  @@index([boardTemplateId])
+  @@index([difficulty])
+}
+
+model CardProgress {
+  id               String    @id @default(cuid())
+  victories        Int       @default(0)
+  completed        Boolean   @default(false)
+  firstCompletedAt DateTime?
+  lastCompletedAt  DateTime?
+  earnedScore      Int       @default(0)
+  earnedGold       Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  cardId String
+  card   QuestCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cardId])
+  @@index([cardId])
+  @@index([completed])
+}
+
+model GameSession {
+  id               String        @id @default(cuid())
+  startingFen      String?       @db.Text
+  playerColor      PlayerColor?
+  engineDifficulty Int           @db.SmallInt
+  outcome          GameOutcome   @default(IN_PROGRESS)
+  victoryReason    VictoryReason?
+  rewardScore      Int           @default(0)
+  rewardGold       Int           @default(0)
+  moveHistory      Json?
+  errorMessage     String?       @db.Text
+  startedAt        DateTime      @default(now())
+  finishedAt       DateTime?
+  updatedAt        DateTime      @updatedAt
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  cardId String
+  card   QuestCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  boardTemplateId String?
+  boardTemplate   BoardTemplate? @relation(fields: [boardTemplateId], references: [id], onDelete: SetNull)
+
+  @@index([userId, startedAt])
+  @@index([cardId])
+  @@index([outcome])
+}

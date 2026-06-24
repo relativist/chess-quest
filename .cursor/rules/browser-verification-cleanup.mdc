@@ -1,0 +1,14 @@
+---
+description: Clean up browser and dev-server resources after verification
+alwaysApply: true
+---
+
+# Browser Verification Cleanup
+
+When using MCP/browser checks or starting a temporary dev server:
+
+- Prefer reusing an existing browser page/context when possible; avoid opening extra Chrome/Playwright windows unnecessarily.
+- If you open browser tabs/pages/contexts for verification, close them after the check unless the user explicitly asks to keep them open.
+- If you start a temporary `npm run dev`/Next server, stop it after the check.
+- Before handing off, verify no temporary Next dev process or port you started is still running.
+- Do not kill user-started terminals or servers unless the user asks or they are clearly stale blockers from your own verification work.

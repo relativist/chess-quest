@@ -8,8 +8,10 @@
 # Daemon runtime files
 daemon.lock
 daemon.log
+daemon-error
 daemon.pid
 bd.sock
+bd.sock.startlock
 sync-state.json
 last-touched
 

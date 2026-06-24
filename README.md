@@ -2,6 +2,9 @@
 
 Chess Quest is a Next.js chess adventure game where players move through quest maps, solve battle cards, earn score and gold, and play against Stockfish from a browser worker. The project includes player auth, progress tracking, a leaderboard, magic upgrades, demo quest maps, and a map editor for creating custom battle cards from FEN positions.
 
+![2026-06-24_16-59.png](wall/2026-06-24_16-59.png)
+![2026-06-24_17-00.png](wall/2026-06-24_17-00.png)
+
 ## Features
 
 - Quest map with ordered battle cards, rewards, completion progress, and next-map unlocking.

@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { PreBattleCard } from "@/components/pre-battle-card";
 import { RightSideToast } from "@/components/right-side-toast";
 import { UsersLeaderboardModal } from "@/components/users-leaderboard-modal";
 import { difficultyLabel, starsForDifficulty } from "@/lib/demo-content";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getAuthenticatedHomePath, getLoginPath } from "@/lib/routing/auth-redirect";
 import { NEXT_MAP_UNLOCK_PERCENT } from "@/lib/quest/map-unlock";
 import { getQuestMapPageData } from "@/lib/quest/quest-data";
 import { getUsersLeaderboard } from "@/lib/quest/leaderboard";
@@ -15,10 +17,13 @@ type MapPageProps = {
 
 export default async function MapPage({ searchParams }: MapPageProps) {
   const user = await getCurrentUser();
+  if (!user) redirect(publicPath(getLoginPath("Зарегистрируйтесь или войдите, чтобы играть.")));
+  if (user.role === "MAP_EDITOR") redirect(publicPath(getAuthenticatedHomePath(user)));
+
   const params = await searchParams;
   const result = params.result ? decodeURIComponent(params.result) : "";
   const completedCardSlug = params.completed ? decodeURIComponent(params.completed) : "";
-  const [mapData, leaderboardUsers] = await Promise.all([getQuestMapPageData(user?.id, params.map), getUsersLeaderboard()]);
+  const [mapData, leaderboardUsers] = await Promise.all([getQuestMapPageData(user.id, params.map), getUsersLeaderboard()]);
   const { current, map, maps, next, previous } = mapData;
   const stageBackground = publicPath("/wall/stage1.png");
   const enemyImageSrc = publicPath("/wall/enemy-stage1-transparent.png");

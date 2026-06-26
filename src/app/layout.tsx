@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
 import { logoutAction } from "@/app/auth/actions";
+import { AppHeader } from "@/components/app-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getBasePath, publicPath } from "@/lib/routing/public-path";
 import "./globals.css";
@@ -22,24 +21,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="ru">
       <body>
-        <header className="app-header">
-          <Link className="brand" href="/map" aria-label="Chess Quest map">
-            <span className="brand-mark" aria-hidden="true">
-              <Image src={publicPath("/favicon.png")} alt="" width={32} height={32} priority />
-            </span>
-            <span>Chess Quest</span>
-          </Link>
-          <nav className="top-nav" aria-label="Main navigation">
-            {user ? <span className="user-pill">{user.displayName}</span> : <Link href="/auth">Вход</Link>}
-            <Link href="/map">Карта</Link>
-            {user?.role === "MAP_EDITOR" ? <Link href="/map/editor">Редактор</Link> : null}
-            {user ? (
-              <form action={logoutAction}>
-                <button className="nav-button" type="submit">Выход</button>
-              </form>
-            ) : null}
-          </nav>
-        </header>
+        <AppHeader faviconSrc={publicPath("/favicon.png")} logout={logoutAction} user={user} />
         <main>{children}</main>
       </body>
     </html>

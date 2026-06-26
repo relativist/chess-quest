@@ -158,7 +158,7 @@ button,
   background-image: var(--stage-background);
   background-position: center center;
   background-repeat: no-repeat;
-  background-size: contain;
+  background-size: cover;
   max-width: none;
   min-height: calc(100vh - 64px);
 }
@@ -188,7 +188,7 @@ button,
   background-image: var(--stage-background);
   background-position: center center;
   background-repeat: no-repeat;
-  background-size: contain;
+  background-size: cover;
   max-width: none;
   min-height: calc(100vh - 64px);
 }
@@ -1691,6 +1691,12 @@ dd {
 
 .editor-background-page .editor-card-list button.selected {
   background: rgba(244, 251, 246, 0.94);
+}
+
+.editor-background-page .editor-card-list .add-card-button {
+  background: var(--green);
+  border-color: var(--green);
+  color: white;
 }
 
 .editor-background-page .editor-card-list .add-card-button,

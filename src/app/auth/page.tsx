@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { CSSProperties } from "react";
 import { demoMapEditorLoginAction, loginAction, registerAction } from "@/app/auth/actions";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getAuthenticatedHomePath } from "@/lib/routing/auth-redirect";
 import { publicPath } from "@/lib/routing/public-path";
 
 type AuthPageProps = {
@@ -11,8 +12,7 @@ type AuthPageProps = {
 
 export default async function AuthPage({ searchParams }: AuthPageProps) {
   const user = await getCurrentUser();
-  if (user?.role === "MAP_EDITOR") redirect("/map/editor");
-  if (user) redirect("/map");
+  if (user) redirect(publicPath(getAuthenticatedHomePath(user)));
 
   const params = await searchParams;
   const mode = params.mode === "register" ? "register" : "login";

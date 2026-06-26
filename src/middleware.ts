@@ -5,8 +5,11 @@ const SESSION_COOKIE = "chess_quest_session";
 
 export function middleware(request: NextRequest) {
   const basePath = getBasePath();
-  const targetPath = request.cookies.has(SESSION_COOKIE) ? "/map" : "/auth";
-  return NextResponse.redirect(new URL(`${basePath}${targetPath}`, request.url));
+  if (request.cookies.has(SESSION_COOKIE)) {
+    return NextResponse.next();
+  }
+
+  return NextResponse.redirect(new URL(`${basePath}/auth`, request.url));
 }
 
 export const config = {

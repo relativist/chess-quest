@@ -101,6 +101,8 @@ export function ChessGameClient({
   const [fenHistory, setFenHistory] = useState<string[]>([initialFen]);
   const [defeatDialogOpen, setDefeatDialogOpen] = useState(false);
   const [defeatReason, setDefeatReason] = useState("Партия завершилась поражением.");
+  const [drawDialogOpen, setDrawDialogOpen] = useState(false);
+  const [drawReason, setDrawReason] = useState("Партия завершилась вничью.");
   const [victoryDialogOpen, setVictoryDialogOpen] = useState(false);
   const [victoryReason, setVictoryReason] = useState("Победа засчитана.");
   const [engineStatus, setEngineStatus] = useState<EngineStatus>("loading");
@@ -177,6 +179,7 @@ export function ChessGameClient({
     setEngineHintMove(null);
     setActiveMagic(null);
     setDefeatDialogOpen(false);
+    setDrawDialogOpen(false);
     setEngineErrorDialogOpen(false);
     setVictoryReason(reason);
     setVictoryDialogOpen(true);
@@ -184,11 +187,55 @@ export function ChessGameClient({
     playAudio(winAudioRef);
   }
 
+  function openDrawDialog(reason: string) {
+    setSelectedSquare(null);
+    setEngineHintMove(null);
+    setActiveMagic(null);
+    setDefeatDialogOpen(false);
+    setDrawDialogOpen(false);
+    setEngineErrorDialogOpen(false);
+    setVictoryDialogOpen(false);
+    setDrawReason(reason);
+    setDrawDialogOpen(true);
+    setNotice({ tone: "info", text: reason });
+  }
+
+  function openDefeatDialog(reason: string) {
+    setSelectedSquare(null);
+    setEngineHintMove(null);
+    setActiveMagic(null);
+    setVictoryDialogOpen(false);
+    setDrawDialogOpen(false);
+    setEngineErrorDialogOpen(false);
+    setDefeatReason(reason);
+    setDefeatDialogOpen(true);
+    setNotice({ tone: "error", text: reason });
+    playAudio(defeatAudioRef);
+  }
+
   function acceptEngineSurrender(reason = "Stockfish сдался. Победа игрока засчитана.") {
     cancelPendingEngineMove();
     openObjectiveVictory(reason);
   }
 
+  function handleTerminalEnginePosition(chessPosition: Chess) {
+    if (chessPosition.isCheckmate()) {
+      if (chessPosition.turn() === playerTurn) {
+        openDefeatDialog("Мат. Stockfish выиграл партию.");
+        return;
+      }
+
+      openObjectiveVictory("Stockfish получил мат и не может продолжить.");
+      return;
+    }
+
+    if (chessPosition.isDraw()) {
+      openDrawDialog(getDrawReason(chessPosition));
+      return;
+    }
+
+    acceptEngineSurrender("Stockfish не нашел продолжения и сдался.");
+  }
 
   function handleBestMove(line: string) {
     const bestMove = line.split(/\s+/)[1] ?? "";
@@ -198,9 +245,9 @@ export function ChessGameClient({
 
     if (!request) return;
 
-    if (!bestMove || bestMove === "(none)") {
+    if (isNoEngineMove(bestMove)) {
       if (request.mode === "apply") {
-        acceptEngineSurrender("Stockfish не нашел продолжения и сдался.");
+        handleTerminalEnginePosition(new Chess(request.fen));
         return;
       }
 
@@ -239,9 +286,12 @@ export function ChessGameClient({
     playAudio(stepAudioRef);
 
     if (nextChess.isCheckmate()) {
-      setDefeatReason("Мат после хода Stockfish " + playedMove.san + ".");
-      setDefeatDialogOpen(true);
-      playAudio(defeatAudioRef);
+      openDefeatDialog("Мат после хода Stockfish " + playedMove.san + ".");
+      return;
+    }
+
+    if (nextChess.isDraw()) {
+      openDrawDialog(getDrawReason(nextChess, "Stockfish сыграл " + playedMove.san + "."));
       return;
     }
 
@@ -459,6 +509,11 @@ export function ChessGameClient({
       return;
     }
 
+    if (nextChessAfterMagic.isDraw()) {
+      openDrawDialog(getDrawReason(nextChessAfterMagic));
+      return;
+    }
+
     if (nextChessAfterMagic.isCheckmate()) {
       openObjectiveVictory(`Мат после магии ${magic.title}.`);
       return;
@@ -569,6 +624,16 @@ export function ChessGameClient({
       return;
     }
 
+    if (nextChess.isCheckmate() && playedMove.color === playerTurn) {
+      openObjectiveVictory(`Мат после ${playedMove.san}.`);
+      return;
+    }
+
+    if (nextChess.isDraw()) {
+      openDrawDialog(getDrawReason(nextChess, "Ход " + playedMove.san + "."));
+      return;
+    }
+
     if (!nextChess.isGameOver() && nextChess.turn() !== playerTurn) {
       requestEngineMove("apply", nextFen);
     }
@@ -604,6 +669,7 @@ export function ChessGameClient({
     setPlayerCapturedPieces(0);
     setSelectedSquare(null);
     setDefeatDialogOpen(false);
+    setDrawDialogOpen(false);
     setEngineErrorDialogOpen(false);
     setVictoryDialogOpen(false);
     pendingEngineRequestRef.current = null;
@@ -634,6 +700,7 @@ export function ChessGameClient({
     setEngineHintMove(null);
     setActiveMagic(null);
     setDefeatDialogOpen(false);
+    setDrawDialogOpen(false);
     setEngineErrorDialogOpen(false);
     setVictoryDialogOpen(false);
     setNotice({ tone: "info", text: count > 1 ? "Откатили ход игрока и ответ Stockfish." : "Откатили последний полуход." });
@@ -850,8 +917,29 @@ export function ChessGameClient({
             <p>Можно вернуться на карту или начать эту битву сначала.</p>
           </div>
           <div className="dialog-actions victory-dialog-actions">
+            <button className="ghost-button" type="button" onClick={() => setDefeatDialogOpen(false)}>К доске</button>
             <Link className="ghost-button" href="/map">Вернуться на карту</Link>
             <button type="button" onClick={resetPosition}>Начать сначала</button>
+          </div>
+        </dialog>
+      ) : null}
+
+      {drawDialogOpen ? (
+        <dialog className="battle-dialog victory-dialog draw-dialog" open aria-labelledby="draw-dialog-title">
+          <div className="battle-dialog-header">
+            <div>
+              <p className="eyebrow">Ничья</p>
+              <h2 id="draw-dialog-title">Партия завершена</h2>
+            </div>
+          </div>
+          <div className="victory-dialog-body">
+            <p className="draw-reason">{drawReason}</p>
+            <p>Можно посмотреть финальную позицию, начать эту битву сначала или вернуться на карту.</p>
+          </div>
+          <div className="dialog-actions victory-dialog-actions">
+            <button className="ghost-button" type="button" onClick={() => setDrawDialogOpen(false)}>К доске</button>
+            <button className="ghost-button" type="button" onClick={resetPosition}>Начать сначала</button>
+            <Link className="primary-action" href="/map">На карту</Link>
           </div>
         </dialog>
       ) : null}
@@ -1006,6 +1094,18 @@ function engineStatusLabel(status: EngineStatus) {
   if (status === "thinking") return "Думает";
   if (status === "error") return "Ошибка";
   return "Готов";
+}
+
+function isNoEngineMove(bestMove: string) {
+  return !bestMove || bestMove === "(none)" || bestMove === "0000";
+}
+
+function getDrawReason(chess: Chess, prefix?: string) {
+  const intro = prefix ? `${prefix} ` : "";
+  if (chess.isStalemate()) return `${intro}Пат. Партия завершилась вничью.`;
+  if (chess.isInsufficientMaterial()) return `${intro}Ничья: недостаточно материала.`;
+  if (chess.isThreefoldRepetition()) return `${intro}Ничья: троекратное повторение.`;
+  return `${intro}Партия завершилась вничью.`;
 }
 
 function uciToMove(uciMove: string) {

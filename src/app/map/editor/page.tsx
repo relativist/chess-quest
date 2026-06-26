@@ -5,6 +5,7 @@ import { createMapAction } from "@/app/map/editor/actions";
 import { getCurrentUser } from "@/lib/auth/session";
 import { demoMapSeed } from "@/lib/demo-seed";
 import { getQuestMapRecordBySlug, listQuestMapsForEditor, resolveCardStartingFen } from "@/lib/quest/quest-repository";
+import { getLoginPath } from "@/lib/routing/auth-redirect";
 import { publicPath } from "@/lib/routing/public-path";
 
 type MapEditorPageProps = {
@@ -13,8 +14,8 @@ type MapEditorPageProps = {
 
 export default async function MapEditorPage({ searchParams }: MapEditorPageProps) {
   const user = await getCurrentUser();
-  if (!user) redirect(`/auth?mode=login&error=${encodeURIComponent("Войдите как map:map для редактирования карты.")}`);
-  if (user.role !== "MAP_EDITOR") redirect("/map");
+  if (!user) redirect(publicPath(getLoginPath("Войдите как map:map для редактирования карты.")));
+  if (user.role !== "MAP_EDITOR") redirect(publicPath("/map"));
 
   const params = await searchParams;
   const maps = await listQuestMapsForEditor();

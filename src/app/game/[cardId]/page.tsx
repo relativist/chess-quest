@@ -25,7 +25,7 @@ export default async function GamePage({ params }: GamePageProps) {
 
   const sideToMoveLabel = card.sideToMove === "white" ? "Белые" : "Черные";
   const battleText = card.text.replaceAll("FEN", "стартовой позиции");
-  const stageBackground = publicPath("/wall/stage1.png");
+  const stageBackground = publicPath("/wall/main_wall.png");
 
   return (
     <section className="game-page battle-stage-page" style={{ "--stage-background": `url(${stageBackground})` } as React.CSSProperties}>

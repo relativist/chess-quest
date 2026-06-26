@@ -3,12 +3,16 @@ import { getUserById } from "@/lib/auth/auth-store";
 
 const SESSION_COOKIE = "chess_quest_session";
 
+function shouldUseSecureCookie() {
+  return process.env.CHESS_QUEST_COOKIE_SECURE === "true";
+}
+
 export async function setSession(userId: string) {
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, userId, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookie(),
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
   });

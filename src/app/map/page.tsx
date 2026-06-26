@@ -17,8 +17,8 @@ type MapPageProps = {
 
 export default async function MapPage({ searchParams }: MapPageProps) {
   const user = await getCurrentUser();
-  if (!user) redirect(publicPath(getLoginPath("Зарегистрируйтесь или войдите, чтобы играть.")));
-  if (user.role === "MAP_EDITOR") redirect(publicPath(getAuthenticatedHomePath(user)));
+  if (!user) redirect(getLoginPath("Зарегистрируйтесь или войдите, чтобы играть."));
+  if (user.role === "MAP_EDITOR") redirect(getAuthenticatedHomePath(user));
 
   const params = await searchParams;
   const result = params.result ? decodeURIComponent(params.result) : "";

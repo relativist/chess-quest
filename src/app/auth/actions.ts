@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { loginUser, registerUser } from "@/lib/auth/auth-store";
 import { clearSession, setSession } from "@/lib/auth/session";
 import { getAuthenticatedHomePath } from "@/lib/routing/auth-redirect";
-import { publicPath } from "@/lib/routing/public-path";
 
 export async function loginAction(formData: FormData) {
   const result = await loginUser({
@@ -13,11 +12,11 @@ export async function loginAction(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirect(publicPath(`/auth?mode=login&error=${encodeURIComponent(result.error)}`));
+    redirect(`/auth?mode=login&error=${encodeURIComponent(result.error)}`);
   }
 
   await setSession(result.user.id);
-  redirect(publicPath(getAuthenticatedHomePath(result.user)));
+  redirect(getAuthenticatedHomePath(result.user));
 }
 
 export async function registerAction(formData: FormData) {
@@ -29,11 +28,11 @@ export async function registerAction(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirect(publicPath(`/auth?mode=register&error=${encodeURIComponent(result.error)}`));
+    redirect(`/auth?mode=register&error=${encodeURIComponent(result.error)}`);
   }
 
   await setSession(result.user.id);
-  redirect(publicPath(getAuthenticatedHomePath(result.user)));
+  redirect(getAuthenticatedHomePath(result.user));
 }
 
 export async function demoMapEditorLoginAction() {
@@ -43,14 +42,14 @@ export async function demoMapEditorLoginAction() {
   });
 
   if (!result.ok) {
-    redirect(publicPath(`/auth?mode=login&error=${encodeURIComponent(result.error)}`));
+    redirect(`/auth?mode=login&error=${encodeURIComponent(result.error)}`);
   }
 
   await setSession(result.user.id);
-  redirect(publicPath("/map/editor"));
+  redirect("/map/editor");
 }
 
 export async function logoutAction() {
   await clearSession();
-  redirect(publicPath("/auth"));
+  redirect("/auth");
 }

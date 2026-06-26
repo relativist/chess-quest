@@ -12,7 +12,7 @@ type AuthPageProps = {
 
 export default async function AuthPage({ searchParams }: AuthPageProps) {
   const user = await getCurrentUser();
-  if (user) redirect(publicPath(getAuthenticatedHomePath(user)));
+  if (user) redirect(getAuthenticatedHomePath(user));
 
   const params = await searchParams;
   const mode = params.mode === "register" ? "register" : "login";

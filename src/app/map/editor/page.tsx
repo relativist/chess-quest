@@ -14,8 +14,8 @@ type MapEditorPageProps = {
 
 export default async function MapEditorPage({ searchParams }: MapEditorPageProps) {
   const user = await getCurrentUser();
-  if (!user) redirect(publicPath(getLoginPath("Войдите как map:map для редактирования карты.")));
-  if (user.role !== "MAP_EDITOR") redirect(publicPath("/map"));
+  if (!user) redirect(getLoginPath("Войдите как map:map для редактирования карты."));
+  if (user.role !== "MAP_EDITOR") redirect("/map");
 
   const params = await searchParams;
   const maps = await listQuestMapsForEditor();

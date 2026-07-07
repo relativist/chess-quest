@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
-import { STARTING_FEN } from "@/lib/chess/fen-validation";
-import { fenToBoardSquares } from "@/lib/chess/fen-board";
-import { getCurrentQuestMap, getGameCardById, getQuestMapPageData } from "./quest-data";
+import {describe, expect, it} from "vitest";
+import {STARTING_FEN} from "@/lib/chess/fen-validation";
+import {fenToBoardSquares} from "@/lib/chess/fen-board";
+import {getCurrentQuestMap, getGameCardById, getQuestMapPageData} from "./quest-data";
 
 describe("quest-data", () => {
   it("returns the current demo map with progress totals", async () => {
@@ -11,6 +11,7 @@ describe("quest-data", () => {
     expect(map.maxScore).toBe(2500);
     expect(map.earnedScore).toBe(100);
     expect(map.earnedGold).toBe(100);
+    expect(map.playerGold).toBe(0);
     expect(map.completedCards).toBe(1);
     expect(map.totalWins).toBe(1);
     expect(map.canOpenNextMap).toBe(false);
@@ -44,7 +45,7 @@ describe("quest-data", () => {
     const squares = fenToBoardSquares(STARTING_FEN);
 
     expect(squares).toHaveLength(64);
-    expect(squares.some((square) => square.piece?.imageSrc.endsWith("/pieces/white-king.png"))).toBe(true);
-    expect(squares.some((square) => square.piece?.imageSrc.endsWith("/pieces/black-king.png"))).toBe(true);
+    expect(squares.some((square) => square.piece?.code === "K")).toBe(true);
+    expect(squares.some((square) => square.piece?.code === "k")).toBe(true);
   });
 });

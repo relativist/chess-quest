@@ -1,10 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useSyncExternalStore } from "react";
-import type { FenBoardSquare } from "@/lib/chess/fen-board";
+import {useSyncExternalStore} from "react";
+import type {FenBoardPiece, FenBoardSquare} from "@/lib/chess/fen-board";
+import {publicPath} from "@/lib/routing/public-path";
 
 type BoardTheme = "beige" | "green" | "gray";
+type PieceTheme =
+  | "default"
+  | "draf_tracula"
+  | "fuxia"
+  | "minimal_frog";
 type BoardOrientation = "black" | "white";
 
 type ChessBoardViewProps = {
@@ -20,6 +26,13 @@ type ChessBoardViewProps = {
 };
 
 const BOARD_THEME_STORAGE_KEY = "chess-quest-board-theme";
+const PIECE_THEME_STORAGE_KEY = "chess-quest-piece-theme";
+const PIECE_THEME_OPTIONS: { label: string; value: PieceTheme }[] = [
+  { label: "Стандартные", value: "default" },
+  { label: "Драфтракула", value: "draf_tracula" },
+  { label: "Фуксия", value: "fuxia" },
+  { label: "Мини-жабы", value: "minimal_frog" },
+];
 const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
 const ranks = ["8", "7", "6", "5", "4", "3", "2", "1"];
 
@@ -34,25 +47,39 @@ export function ChessBoardView({
   orientation = "white",
   selectedSquare = null,
 }: ChessBoardViewProps) {
-  const theme = useSyncExternalStore(subscribeToBoardTheme, getBoardThemeSnapshot, getServerBoardThemeSnapshot);
+  const boardTheme = useSyncExternalStore(subscribeToBoardTheme, getBoardThemeSnapshot, getServerBoardThemeSnapshot);
+  const pieceTheme = useSyncExternalStore(subscribeToPieceTheme, getPieceThemeSnapshot, getServerPieceThemeSnapshot);
   const orientedFiles = orientation === "black" ? files.slice().reverse() : files;
   const orientedRanks = orientation === "black" ? ranks.slice().reverse() : ranks;
   const orientedSquares = orientation === "black" ? squares.slice().reverse() : squares;
 
-  function changeTheme(nextTheme: BoardTheme) {
+  function changeBoardTheme(nextTheme: BoardTheme) {
     window.localStorage.setItem(BOARD_THEME_STORAGE_KEY, nextTheme);
     window.dispatchEvent(new Event("chess-quest-board-theme-change"));
   }
 
+  function changePieceTheme(nextTheme: PieceTheme) {
+    window.localStorage.setItem(PIECE_THEME_STORAGE_KEY, nextTheme);
+    window.dispatchEvent(new Event("chess-quest-piece-theme-change"));
+  }
+
   return (
-    <div className={`board-shell ${className ?? ""}`} data-board-theme={theme}>
+    <div className={`board-shell ${className ?? ""}`} data-board-theme={boardTheme}>
       <div className="board-controls">
         <label>
-          <span>Тема доски</span>
-          <select value={theme} onChange={(event) => changeTheme(event.target.value as BoardTheme)}>
+          <span>Доска</span>
+          <select value={boardTheme} onChange={(event) => changeBoardTheme(event.target.value as BoardTheme)}>
             <option value="beige">Бежевая</option>
             <option value="green">Зеленая</option>
             <option value="gray">Серая</option>
+          </select>
+        </label>
+        <label>
+          <span>Фигуры</span>
+          <select value={pieceTheme} onChange={(event) => changePieceTheme(event.target.value as PieceTheme)}>
+            {PIECE_THEME_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
           </select>
         </label>
       </div>
@@ -75,7 +102,7 @@ export function ChessBoardView({
             const isHintTo = square.square === hintToSquare;
             const className = `${square.color}${isSelected ? " selected" : ""}${isLegalMove ? " legal-move" : ""}${isHintFrom ? " engine-hint-from" : ""}${isHintTo ? " engine-hint-to" : ""}`;
             const content = square.piece ? (
-              <Image height={128} src={square.piece.imageSrc} width={128} alt={square.piece.alt} loading="eager" />
+              <Image height={128} src={getPieceImageSrc(square.piece, pieceTheme)} width={128} alt={square.piece.alt} loading="eager" />
             ) : null;
 
             if (onSquareClick) {
@@ -117,6 +144,53 @@ function subscribeToBoardTheme(onStoreChange: () => void) {
     window.removeEventListener("storage", onStoreChange);
     window.removeEventListener("chess-quest-board-theme-change", onStoreChange);
   };
+}
+
+
+function subscribeToPieceTheme(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener("chess-quest-piece-theme-change", onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener("chess-quest-piece-theme-change", onStoreChange);
+  };
+}
+
+function getPieceThemeSnapshot(): PieceTheme {
+  const savedTheme = window.localStorage.getItem(PIECE_THEME_STORAGE_KEY);
+  return isPieceTheme(savedTheme) ? savedTheme : "default";
+}
+
+function getServerPieceThemeSnapshot(): PieceTheme {
+  return "default";
+}
+
+function isPieceTheme(value: string | null): value is PieceTheme {
+  return PIECE_THEME_OPTIONS.some((option) => option.value === value);
+}
+
+function getPieceImageSrc(piece: FenBoardPiece, theme: PieceTheme) {
+  const color = piece.code === piece.code.toUpperCase() ? "white" : "black";
+  const pieceName = getPieceName(piece.code);
+  return publicPath(`/pieces/${theme}/${color}-${pieceName}.png`);
+}
+
+function getPieceName(code: string) {
+  switch (code.toLowerCase()) {
+    case "k":
+      return "king";
+    case "q":
+      return "queen";
+    case "r":
+      return "rook";
+    case "b":
+      return "bishop";
+    case "n":
+      return "knight";
+    default:
+      return "pawn";
+  }
 }
 
 function getBoardThemeSnapshot(): BoardTheme {

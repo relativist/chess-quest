@@ -1,14 +1,26 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import {mkdir, readFile, writeFile} from "node:fs/promises";
 import path from "node:path";
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
-import type { DemoQuestCardSeed } from "@/lib/demo-seed";
-import { ensureQuestDataReady } from "@/lib/quest/ensure-demo-map";
-import { getPrimaryPublishedQuestMap } from "@/lib/quest/quest-repository";
+import {
+    getAllStoredUserGoldBalances,
+    getStoredUserGold,
+    incrementStoredUserGold,
+    spendStoredUserGold
+} from "@/lib/auth/auth-store";
+import {getPrisma, isDatabaseConfigured} from "@/lib/db/prisma";
+import type {DemoQuestCardSeed} from "@/lib/demo-seed";
+import {ensureQuestDataReady} from "@/lib/quest/ensure-demo-map";
 
 function getProgressFile() {
   const dataDir = process.env.CHESS_QUEST_DATA_DIR || path.join(process.cwd(), ".data");
   return path.join(dataDir, "card-progress.json");
 }
+
+const REPEAT_CARD_REWARD_RATE = 0.5;
+
+export function calculateRepeatCardReward(reward: number) {
+  return Math.max(1, Math.floor(reward * REPEAT_CARD_REWARD_RATE));
+}
+
 
 export type CardProgressRecord = {
   cardSlug: string;
@@ -22,6 +34,7 @@ export type CardProgressRecord = {
 type StoredProgress = {
   users: Record<string, Record<string, CardProgressRecord>>;
 };
+
 
 export type VictoryResult = {
   cardSlug: string;
@@ -44,6 +57,26 @@ export type SpendGoldResult = {
   availableGold: number;
   ok: boolean;
 };
+
+export async function getUserGold(userId: string | undefined) {
+  if (!userId) return 0;
+
+  if (isDatabaseConfigured()) {
+    const user = await getPrisma().user.findUnique({ where: { id: userId }, select: { gold: true } });
+    return user?.gold ?? 0;
+  }
+
+  return getStoredUserGold(userId);
+}
+
+export async function getAllUserGoldBalances() {
+  if (isDatabaseConfigured()) {
+    const users = await getPrisma().user.findMany({ select: { gold: true, id: true } });
+    return new Map(users.map((user) => [user.id, user.gold]));
+  }
+
+  return getAllStoredUserGoldBalances();
+}
 
 export async function getAllUserProgressSummaries() {
   if (isDatabaseConfigured()) {
@@ -128,30 +161,39 @@ export async function markCardVictory(userId: string, card: Pick<DemoQuestCardSe
       where: { userId_cardId: { userId, cardId: dbCard.id } },
     });
     const isFirstWin = !current?.completed;
-    const awardedScore = isFirstWin ? card.rewardScore : Math.max(1, Math.floor(card.rewardScore * 0.1));
-    const awardedGold = isFirstWin ? card.rewardGold : Math.max(1, Math.floor(card.rewardGold * 0.1));
+    const awardedScore = isFirstWin ? card.rewardScore : calculateRepeatCardReward(card.rewardScore);
+    const awardedGold = isFirstWin ? card.rewardGold : calculateRepeatCardReward(card.rewardGold);
     const now = new Date();
 
-    const next = await prisma.cardProgress.upsert({
-      where: { userId_cardId: { userId, cardId: dbCard.id } },
-      update: {
-        completed: true,
-        victories: (current?.victories ?? 0) + 1,
-        earnedScore: (current?.earnedScore ?? 0) + awardedScore,
-        earnedGold: (current?.earnedGold ?? 0) + awardedGold,
-        lastCompletedAt: now,
-        firstCompletedAt: current?.firstCompletedAt ?? now,
-      },
-      create: {
-        userId,
-        cardId: dbCard.id,
-        completed: true,
-        victories: 1,
-        earnedScore: awardedScore,
-        earnedGold: awardedGold,
-        firstCompletedAt: now,
-        lastCompletedAt: now,
-      },
+    const { next, user } = await prisma.$transaction(async (tx) => {
+      const nextProgress = await tx.cardProgress.upsert({
+        where: { userId_cardId: { userId, cardId: dbCard.id } },
+        update: {
+          completed: true,
+          victories: (current?.victories ?? 0) + 1,
+          earnedScore: (current?.earnedScore ?? 0) + awardedScore,
+          earnedGold: (current?.earnedGold ?? 0) + awardedGold,
+          lastCompletedAt: now,
+          firstCompletedAt: current?.firstCompletedAt ?? now,
+        },
+        create: {
+          userId,
+          cardId: dbCard.id,
+          completed: true,
+          victories: 1,
+          earnedScore: awardedScore,
+          earnedGold: awardedGold,
+          firstCompletedAt: now,
+          lastCompletedAt: now,
+        },
+      });
+      const updatedUser = await tx.user.update({
+        where: { id: userId },
+        data: { gold: { increment: awardedGold } },
+        select: { gold: true },
+      });
+
+      return { next: nextProgress, user: updatedUser };
     });
 
     return {
@@ -159,7 +201,7 @@ export async function markCardVictory(userId: string, card: Pick<DemoQuestCardSe
       isFirstWin,
       awardedGold,
       awardedScore,
-      totalGold: next.earnedGold,
+      totalGold: user.gold,
       totalScore: next.earnedScore,
       wins: next.victories,
     };
@@ -169,8 +211,8 @@ export async function markCardVictory(userId: string, card: Pick<DemoQuestCardSe
   const userProgress = store.users[userId] ?? {};
   const current = userProgress[card.slug];
   const isFirstWin = !current?.completed;
-  const awardedScore = isFirstWin ? card.rewardScore : Math.max(1, Math.floor(card.rewardScore * 0.1));
-  const awardedGold = isFirstWin ? card.rewardGold : Math.max(1, Math.floor(card.rewardGold * 0.1));
+  const awardedScore = isFirstWin ? card.rewardScore : calculateRepeatCardReward(card.rewardScore);
+  const awardedGold = isFirstWin ? card.rewardGold : calculateRepeatCardReward(card.rewardGold);
 
   const next: CardProgressRecord = {
     cardSlug: card.slug,
@@ -184,13 +226,14 @@ export async function markCardVictory(userId: string, card: Pick<DemoQuestCardSe
   userProgress[card.slug] = next;
   store.users[userId] = userProgress;
   await writeFileStore(store);
+  const totalGold = await incrementStoredUserGold(userId, awardedGold);
 
   return {
     cardSlug: card.slug,
     isFirstWin,
     awardedGold,
     awardedScore,
-    totalGold: next.earnedGold,
+    totalGold,
     totalScore: next.earnedScore,
     wins: next.wins,
   };
@@ -199,123 +242,21 @@ export async function markCardVictory(userId: string, card: Pick<DemoQuestCardSe
 export async function spendUserGold(userId: string, costGold: number): Promise<SpendGoldResult> {
   const cost = Math.max(0, Math.floor(costGold));
   if (cost === 0) {
-    const summary = (await getAllUserProgressSummaries()).get(userId);
-    return { availableGold: summary?.earnedGold ?? 0, ok: true };
+    return { availableGold: await getUserGold(userId), ok: true };
   }
 
   if (isDatabaseConfigured()) {
-    await ensureQuestDataReady();
     const prisma = getPrisma();
-    const map = await getPrimaryPublishedQuestMap();
-    const cards = map?.cards ?? [];
-    const cardSlugs = cards.map((card) => card.slug);
-    const [dbCards, records] = await Promise.all([
-      prisma.questCard.findMany({ where: { slug: { in: cardSlugs } }, select: { id: true, slug: true } }),
-      prisma.cardProgress.findMany({ where: { userId }, include: { card: { select: { slug: true } } } }),
-    ]);
-    const cardIds = new Map(dbCards.map((card) => [card.slug, card.id]));
-    const progressBySlug = new Map(records.map((record) => [record.card.slug, record]));
-    const wallet = cards
-      .map((card) => {
-        const record = progressBySlug.get(card.slug);
-        return {
-          card: { completed: card.completed, rewardGold: card.rewardGold, slug: card.slug },
-          record,
-          availableGold: (card.completed ? card.rewardGold : 0) + (record?.earnedGold ?? 0),
-        };
-      })
-      .filter((entry) => entry.availableGold > 0);
-    for (const record of records) {
-      if (cardSlugs.includes(record.card.slug) || record.earnedGold <= 0) continue;
-      wallet.push({
-        card: { completed: false, rewardGold: 0, slug: record.card.slug },
-        record,
-        availableGold: record.earnedGold,
-      });
-    }
-    const totalGold = wallet.reduce((total, entry) => total + entry.availableGold, 0);
-    if (totalGold < cost) return { availableGold: totalGold, ok: false };
-
-    let remaining = cost;
-    await prisma.$transaction(async (tx) => {
-      for (const entry of wallet) {
-        if (remaining <= 0) break;
-
-        const spendFromCard = Math.min(entry.availableGold, remaining);
-        remaining -= spendFromCard;
-
-        if (entry.record) {
-          await tx.cardProgress.update({
-            where: { id: entry.record.id },
-            data: { earnedGold: entry.record.earnedGold - spendFromCard },
-          });
-          continue;
-        }
-
-        const cardId = cardIds.get(entry.card.slug);
-        if (!cardId) throw new Error(`Card not found for gold spend: ${entry.card.slug}`);
-
-        await tx.cardProgress.create({
-          data: {
-            cardId,
-            completed: false,
-            earnedGold: -spendFromCard,
-            earnedScore: 0,
-            userId,
-            victories: 0,
-          },
-        });
-      }
+    const updated = await prisma.user.updateMany({
+      where: { id: userId, gold: { gte: cost } },
+      data: { gold: { decrement: cost } },
     });
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { gold: true } });
 
-    return { availableGold: totalGold - cost, ok: true };
+    return { availableGold: user?.gold ?? 0, ok: updated.count === 1 };
   }
 
-  const store = await readFileStore();
-  const map = await getPrimaryPublishedQuestMap();
-  const cards = map?.cards ?? [];
-  const userProgress = store.users[userId] ?? {};
-  const wallet = cards
-    .map((card) => {
-      const record = userProgress[card.slug];
-      return {
-        card: { completed: card.completed, rewardGold: card.rewardGold, slug: card.slug },
-        record,
-        availableGold: (card.completed ? card.rewardGold : 0) + (record?.earnedGold ?? 0),
-      };
-    })
-    .filter((entry) => entry.availableGold > 0);
-  for (const [slug, record] of Object.entries(userProgress)) {
-    if (cards.some((card) => card.slug === slug) || record.earnedGold <= 0) continue;
-    wallet.push({
-      card: { completed: false, rewardGold: 0, slug },
-      record,
-      availableGold: record.earnedGold,
-    });
-  }
-  const totalGold = wallet.reduce((total, entry) => total + entry.availableGold, 0);
-  if (totalGold < cost) return { availableGold: totalGold, ok: false };
-
-  let remaining = cost;
-  for (const entry of wallet) {
-    if (remaining <= 0) break;
-
-    const spendFromCard = Math.min(entry.availableGold, remaining);
-    remaining -= spendFromCard;
-    const current = entry.record;
-    userProgress[entry.card.slug] = {
-      cardSlug: entry.card.slug,
-      completed: current?.completed ?? false,
-      earnedGold: (current?.earnedGold ?? 0) - spendFromCard,
-      earnedScore: current?.earnedScore ?? 0,
-      updatedAt: new Date().toISOString(),
-      wins: current?.wins ?? 0,
-    };
-  }
-
-  store.users[userId] = userProgress;
-  await writeFileStore(store);
-  return { availableGold: totalGold - cost, ok: true };
+  return spendStoredUserGold(userId, cost);
 }
 
 async function readFileStore(): Promise<StoredProgress> {

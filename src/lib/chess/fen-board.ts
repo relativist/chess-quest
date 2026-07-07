@@ -1,8 +1,5 @@
-import { publicPath } from "@/lib/routing/public-path";
-
 export type FenBoardPiece = {
   code: string;
-  imageSrc: string;
   alt: string;
 };
 
@@ -14,18 +11,18 @@ export type FenBoardSquare = {
 };
 
 const PIECES: Record<string, FenBoardPiece> = {
-  K: { code: "K", imageSrc: publicPath("/pieces/white-king.png"), alt: "Белый король" },
-  Q: { code: "Q", imageSrc: publicPath("/pieces/white-queen.png"), alt: "Белый ферзь" },
-  R: { code: "R", imageSrc: publicPath("/pieces/white-rook.png"), alt: "Белая ладья" },
-  B: { code: "B", imageSrc: publicPath("/pieces/white-bishop.png"), alt: "Белый слон" },
-  N: { code: "N", imageSrc: publicPath("/pieces/white-knight.png"), alt: "Белый конь" },
-  P: { code: "P", imageSrc: publicPath("/pieces/white-pawn.png"), alt: "Белая пешка" },
-  k: { code: "k", imageSrc: publicPath("/pieces/black-king.png"), alt: "Черный король" },
-  q: { code: "q", imageSrc: publicPath("/pieces/black-queen.png"), alt: "Черный ферзь" },
-  r: { code: "r", imageSrc: publicPath("/pieces/black-rook.png"), alt: "Черная ладья" },
-  b: { code: "b", imageSrc: publicPath("/pieces/black-bishop.png"), alt: "Черный слон" },
-  n: { code: "n", imageSrc: publicPath("/pieces/black-knight.png"), alt: "Черный конь" },
-  p: { code: "p", imageSrc: publicPath("/pieces/black-pawn.png"), alt: "Черная пешка" },
+  K: { code: "K", alt: "Белый король" },
+  Q: { code: "Q", alt: "Белый ферзь" },
+  R: { code: "R", alt: "Белая ладья" },
+  B: { code: "B", alt: "Белый слон" },
+  N: { code: "N", alt: "Белый конь" },
+  P: { code: "P", alt: "Белая пешка" },
+  k: { code: "k", alt: "Черный король" },
+  q: { code: "q", alt: "Черный ферзь" },
+  r: { code: "r", alt: "Черная ладья" },
+  b: { code: "b", alt: "Черный слон" },
+  n: { code: "n", alt: "Черный конь" },
+  p: { code: "p", alt: "Черная пешка" },
 };
 
 const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];

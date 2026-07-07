@@ -2,14 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Chess, type Move, type Square } from "chess.js";
-import { ChessBoardView } from "@/components/chess-board-view";
-import { fenToBoardSquares, type FenBoardSquare } from "@/lib/chess/fen-board";
-import { getEngineDifficulty } from "@/lib/chess/engine-difficulty";
-import { evaluateCardObjective, objectiveProgressLabel, type CardObjective } from "@/lib/quest/card-objectives";
-import { MAGIC_UPGRADES, type MagicUpgradeSpec } from "@/lib/quest/magic-upgrades";
-import { publicPath } from "@/lib/routing/public-path";
+import {useEffect, useMemo, useRef, useState} from "react";
+import {Chess, type Move, type Square} from "chess.js";
+import {ChessBoardView} from "@/components/chess-board-view";
+import {type FenBoardSquare, fenToBoardSquares} from "@/lib/chess/fen-board";
+import {
+    type EngineDifficultyLevel,
+    getEngineDifficulty,
+    STRONGEST_ENGINE_DIFFICULTY
+} from "@/lib/chess/engine-difficulty";
+import {type CardObjective, evaluateCardObjective, objectiveProgressLabel} from "@/lib/quest/card-objectives";
+import {MAGIC_UPGRADES, type MagicUpgradeSpec} from "@/lib/quest/magic-upgrades";
+import {publicPath} from "@/lib/routing/public-path";
 
 type PlayerSide = "black" | "white";
 type EngineStatus = "error" | "loading" | "ready" | "thinking";
@@ -21,9 +25,11 @@ type ChessGameClientProps = {
   cardSlug: string;
   cardStars: string;
   cardTitle: string;
+  checkSoundSrc: string;
   coinIconSrc: string;
   completeCardAction: (formData: FormData) => void | Promise<void>;
   congratulationsText: string;
+  captureSoundSrc: string;
   defeatedEnemyImageSrc: string;
   defeatedHeroImageSrc: string;
   defeatSoundSrc: string;
@@ -72,9 +78,11 @@ export function ChessGameClient({
   cardSlug,
   cardStars,
   cardTitle,
+  checkSoundSrc,
   coinIconSrc,
   completeCardAction,
   congratulationsText,
+  captureSoundSrc,
   defeatedEnemyImageSrc,
   defeatedHeroImageSrc,
   defeatSoundSrc,
@@ -98,7 +106,9 @@ export function ChessGameClient({
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
   const [playerCapturedPieces, setPlayerCapturedPieces] = useState(0);
+  const [playerGivenChecks, setPlayerGivenChecks] = useState(0);
   const [fenHistory, setFenHistory] = useState<string[]>([initialFen]);
+  const [checkCountHistory, setCheckCountHistory] = useState<number[]>([0]);
   const [defeatDialogOpen, setDefeatDialogOpen] = useState(false);
   const [defeatReason, setDefeatReason] = useState("Партия завершилась поражением.");
   const [drawDialogOpen, setDrawDialogOpen] = useState(false);
@@ -109,9 +119,10 @@ export function ChessGameClient({
   const [engineHintMove, setEngineHintMove] = useState<EngineHintMove | null>(null);
   const [engineErrorDialogOpen, setEngineErrorDialogOpen] = useState(false);
   const [engineErrorText, setEngineErrorText] = useState("Ошибка движка Stockfish.");
-  const [availableGold, setAvailableGold] = useState(playerGold);
+  const [availableGoldState, setAvailableGoldState] = useState({ sourceGold: playerGold, value: playerGold });
   const [activeMagic, setActiveMagic] = useState<MagicUpgradeSpec | null>(null);
   const [magicPending, setMagicPending] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [notice, setNotice] = useState<GameNotice>({
     tone: "info",
     text: `Вы играете за ${sideLabel(playerSide).toLowerCase()}. Выберите фигуру стороны, которая сейчас ходит.`,
@@ -121,16 +132,20 @@ export function ChessGameClient({
   const pendingEngineRequestRef = useRef<PendingEngineRequest | null>(null);
   const handleBestMoveRef = useRef<(line: string) => void>(() => undefined);
   const stepAudioRef = useRef<HTMLAudioElement | null>(null);
+  const captureAudioRef = useRef<HTMLAudioElement | null>(null);
+  const checkAudioRef = useRef<HTMLAudioElement | null>(null);
   const winAudioRef = useRef<HTMLAudioElement | null>(null);
   const defeatAudioRef = useRef<HTMLAudioElement | null>(null);
   const fenRef = useRef(fen);
   const moveHistoryRef = useRef(moveHistory);
   const playerCapturedPiecesRef = useRef(playerCapturedPieces);
+  const playerGivenChecksRef = useRef(playerGivenChecks);
   const playerTurn = playerSideToTurn(playerSide);
   const engineDifficulty = getEngineDifficulty(difficulty);
 
   const chess = useMemo(() => new Chess(fen), [fen]);
   const boardSquares = useMemo(() => fenToBoardSquares(fen), [fen]);
+  const availableGold = availableGoldState.sourceGold === playerGold ? availableGoldState.value : playerGold;
   const legalMoves = useMemo(() => {
     if (activeMagic || !selectedSquare || isGameOver(chess) || engineStatus === "thinking") return [];
     return chess.moves({ square: selectedSquare, verbose: true }) as Move[];
@@ -144,7 +159,7 @@ export function ChessGameClient({
   const hasEngineHint = Boolean(engineHintMove);
   const canAcceptEngineSurrender = engineStatus !== "loading" && !isGameOver(chess);
   const canUndoFullTurn = fenHistory.length > 2;
-  const objectiveProgress = objectiveProgressLabel(objective, moveHistory.length, playerCapturedPieces);
+  const objectiveProgress = objectiveProgressLabel(objective, moveHistory.length, playerCapturedPieces, playerGivenChecks);
 
   useEffect(() => {
     fenRef.current = fen;
@@ -157,6 +172,10 @@ export function ChessGameClient({
   useEffect(() => {
     playerCapturedPiecesRef.current = playerCapturedPieces;
   }, [playerCapturedPieces]);
+
+  useEffect(() => {
+    playerGivenChecksRef.current = playerGivenChecks;
+  }, [playerGivenChecks]);
 
   function cancelPendingEngineMove() {
     if (pendingEngineRequestRef.current) {
@@ -216,6 +235,20 @@ export function ChessGameClient({
   function acceptEngineSurrender(reason = "Stockfish сдался. Победа игрока засчитана.") {
     cancelPendingEngineMove();
     openObjectiveVictory(reason);
+  }
+
+  function playMoveAudio(chessPosition: Chess, move: Move) {
+    if (chessPosition.isCheck()) {
+      playAudio(checkAudioRef);
+      return;
+    }
+
+    if (move.captured) {
+      playAudio(captureAudioRef);
+      return;
+    }
+
+    playAudio(stepAudioRef);
   }
 
   function handleTerminalEnginePosition(chessPosition: Chess) {
@@ -280,10 +313,11 @@ export function ChessGameClient({
     moveHistoryRef.current = nextMoveHistory;
     setFen(nextFen);
     setFenHistory((current) => [...current, nextFen]);
+    setCheckCountHistory((current) => [...current, playerGivenChecksRef.current]);
     setMoveHistory(nextMoveHistory);
     setEngineHintMove(null);
     setNotice(getEngineMoveNotice(nextChess, playedMove));
-    playAudio(stepAudioRef);
+    playMoveAudio(nextChess, playedMove);
 
     if (nextChess.isCheckmate()) {
       openDefeatDialog("Мат после хода Stockfish " + playedMove.san + ".");
@@ -311,7 +345,26 @@ export function ChessGameClient({
   });
 
   useEffect(() => {
-    const worker = new Worker(stockfishWorkerSrc);
+    function reportWorkerStartupError(message: string) {
+      window.setTimeout(() => {
+        setEngineStatus("error");
+        showEngineError(message);
+      }, 0);
+    }
+
+    if (typeof Worker === "undefined") {
+      reportWorkerStartupError("Stockfish Web Worker не включен в этом браузере. Партия не может продолжиться.");
+      return;
+    }
+
+    let worker: Worker;
+    try {
+      worker = new Worker(stockfishWorkerSrc);
+    } catch {
+      reportWorkerStartupError("Stockfish Web Worker не включен или не смог загрузиться. Партия не может продолжиться.");
+      return;
+    }
+
     workerRef.current = worker;
 
     worker.onmessage = (event: MessageEvent<string>) => {
@@ -339,7 +392,7 @@ export function ChessGameClient({
     worker.onerror = () => {
       pendingEngineRequestRef.current = null;
       setEngineStatus("error");
-      showEngineError("Ошибка движка Stockfish. Перезагрузите страницу или попробуйте позже.");
+      showEngineError("Stockfish Web Worker не включен или завершился с ошибкой. Перезагрузите страницу или попробуйте позже.");
     };
 
     worker.postMessage("uci");
@@ -394,11 +447,14 @@ export function ChessGameClient({
       return;
     }
 
+    const searchDifficulty = getEngineSearchDifficulty(mode, engineDifficulty);
+
     pendingEngineRequestRef.current = { fen: sourceFen, mode };
     setEngineStatus("thinking");
     if (!options.preserveHint) setEngineHintMove(null);
+    configureEngineStrength(worker, mode, searchDifficulty);
     worker.postMessage(`position fen ${sourceFen}`);
-    worker.postMessage(`go movetime ${engineDifficulty.moveTimeMs}`);
+    worker.postMessage(`go movetime ${searchDifficulty.moveTimeMs}`);
   }
 
   async function handleMagicButton(upgrade: MagicUpgradeSpec) {
@@ -488,10 +544,14 @@ export function ChessGameClient({
     if (!paid) return;
 
     const nextMoveHistory = [...moveHistoryRef.current, `Магия: ${magic.title} на ${targetSquare}`];
+    const nextPlayerGivenChecks = playerGivenChecksRef.current + (nextChessAfterMagic.isCheck() ? 1 : 0);
     moveHistoryRef.current = nextMoveHistory;
+    playerGivenChecksRef.current = nextPlayerGivenChecks;
     setFen(nextFen);
     setFenHistory((current) => [...current, nextFen]);
+    setCheckCountHistory((current) => [...current, nextPlayerGivenChecks]);
     setMoveHistory(nextMoveHistory);
+    setPlayerGivenChecks(nextPlayerGivenChecks);
     setSelectedSquare(null);
     setActiveMagic(null);
     setEngineHintMove(null);
@@ -499,7 +559,9 @@ export function ChessGameClient({
 
     const objectiveResult = evaluateCardObjective(objective, {
       completedHalfMoves: nextMoveHistory.length,
+      completedPlayerMoves: countPlayerMoves(nextMoveHistory.length),
       capturedPieces: playerCapturedPiecesRef.current,
+      givenChecks: nextPlayerGivenChecks,
       isCheck: nextChessAfterMagic.isCheck(),
       isCheckmate: nextChessAfterMagic.isCheckmate(),
     });
@@ -509,13 +571,18 @@ export function ChessGameClient({
       return;
     }
 
-    if (nextChessAfterMagic.isDraw()) {
-      openDrawDialog(getDrawReason(nextChessAfterMagic));
+    if (nextChessAfterMagic.isCheckmate()) {
+      if (objective.type === "checkmate_in_moves") {
+        openDrawDialog(objectiveResult.label);
+        return;
+      }
+
+      openObjectiveVictory(`Мат после магии ${magic.title}.`);
       return;
     }
 
-    if (nextChessAfterMagic.isCheckmate()) {
-      openObjectiveVictory(`Мат после магии ${magic.title}.`);
+    if (nextChessAfterMagic.isDraw()) {
+      openDrawDialog(getDrawReason(nextChessAfterMagic));
       return;
     }
 
@@ -529,7 +596,7 @@ export function ChessGameClient({
       const formData = new FormData();
       formData.set("magicId", upgrade.id);
       const result = await spendMagicGoldAction(formData);
-      setAvailableGold(result.availableGold);
+      setAvailableGoldState({ sourceGold: playerGold, value: result.availableGold });
       if (!result.ok) {
         setNotice({ tone: "error", text: result.error ?? "Не удалось оплатить магию." });
         return false;
@@ -600,21 +667,27 @@ export function ChessGameClient({
     const nextFen = nextChess.fen();
     const nextMoveHistory = [...moveHistoryRef.current, playedMove.san];
     const nextPlayerCapturedPieces = playerCapturedPiecesRef.current + (playedMove.captured ? 1 : 0);
+    const nextPlayerGivenChecks = playerGivenChecksRef.current + (nextChess.isCheck() ? 1 : 0);
     moveHistoryRef.current = nextMoveHistory;
     playerCapturedPiecesRef.current = nextPlayerCapturedPieces;
+    playerGivenChecksRef.current = nextPlayerGivenChecks;
     setFen(nextFen);
     setFenHistory((current) => [...current, nextFen]);
+    setCheckCountHistory((current) => [...current, nextPlayerGivenChecks]);
     setMoveHistory(nextMoveHistory);
     setPlayerCapturedPieces(nextPlayerCapturedPieces);
+    setPlayerGivenChecks(nextPlayerGivenChecks);
     setSelectedSquare(null);
     setEngineHintMove(null);
     setNotice(getMoveNotice(nextChess, playedMove));
-    playAudio(stepAudioRef);
+    playMoveAudio(nextChess, playedMove);
 
     const objectiveResult = evaluateCardObjective(objective, {
       capturedPiece: playedMove.captured,
       completedHalfMoves: nextMoveHistory.length,
+      completedPlayerMoves: countPlayerMoves(nextMoveHistory.length),
       capturedPieces: nextPlayerCapturedPieces,
+      givenChecks: nextPlayerGivenChecks,
       isCheck: nextChess.isCheck(),
       isCheckmate: nextChess.isCheckmate() && playedMove.color === playerTurn,
     });
@@ -625,6 +698,11 @@ export function ChessGameClient({
     }
 
     if (nextChess.isCheckmate() && playedMove.color === playerTurn) {
+      if (objective.type === "checkmate_in_moves") {
+        openDrawDialog(objectiveResult.label);
+        return;
+      }
+
       openObjectiveVictory(`Мат после ${playedMove.san}.`);
       return;
     }
@@ -663,10 +741,13 @@ export function ChessGameClient({
   function resetPosition() {
     setFen(initialFen);
     setFenHistory([initialFen]);
+    setCheckCountHistory([0]);
     moveHistoryRef.current = [];
     playerCapturedPiecesRef.current = 0;
+    playerGivenChecksRef.current = 0;
     setMoveHistory([]);
     setPlayerCapturedPieces(0);
+    setPlayerGivenChecks(0);
     setSelectedSquare(null);
     setDefeatDialogOpen(false);
     setDrawDialogOpen(false);
@@ -686,16 +767,21 @@ export function ChessGameClient({
     cancelPendingEngineMove();
     const keepLength = Math.max(1, fenHistory.length - count);
     const nextFenHistory = fenHistory.slice(0, keepLength);
+    const nextCheckCountHistory = checkCountHistory.slice(0, keepLength);
     const nextMoveHistory = moveHistory.slice(0, Math.max(0, moveHistory.length - count));
     const nextCapturedPieces = countPlayerCaptures(nextMoveHistory);
+    const nextGivenChecks = nextCheckCountHistory[nextCheckCountHistory.length - 1] ?? 0;
     const nextFen = nextFenHistory[nextFenHistory.length - 1] ?? initialFen;
 
     moveHistoryRef.current = nextMoveHistory;
     playerCapturedPiecesRef.current = nextCapturedPieces;
+    playerGivenChecksRef.current = nextGivenChecks;
     setFen(nextFen);
     setFenHistory(nextFenHistory);
+    setCheckCountHistory(nextCheckCountHistory);
     setMoveHistory(nextMoveHistory);
     setPlayerCapturedPieces(nextCapturedPieces);
+    setPlayerGivenChecks(nextGivenChecks);
     setSelectedSquare(null);
     setEngineHintMove(null);
     setActiveMagic(null);
@@ -709,28 +795,11 @@ export function ChessGameClient({
   return (
     <>
       <audio ref={stepAudioRef} preload="auto" src={stepSoundSrc} />
+      <audio ref={captureAudioRef} preload="auto" src={captureSoundSrc} />
+      <audio ref={checkAudioRef} preload="auto" src={checkSoundSrc} />
       <audio ref={winAudioRef} preload="auto" src={winSoundSrc} />
       <audio ref={defeatAudioRef} preload="auto" src={defeatSoundSrc} />
       <div className="release-battle-shell">
-        <div className="game-board-area">
-          <ChessBoardView
-            ariaLabel={`Шахматная доска: ${cardTitle}`}
-            hintFromSquare={engineHintMove?.from ?? null}
-            hintToSquare={engineHintMove?.to ?? null}
-            legalMoveSquares={highlightedSquares}
-            orientation={playerSide}
-            selectedSquare={selectedSquare}
-            squares={boardSquares}
-            onSquareClick={handleSquareClick}
-          />
-          <div className="board-history-actions" aria-label="Управление ходами">
-            <button className="icon-action-button" type="button" disabled={!canUndoFullTurn} onClick={() => undoMoves(2)} aria-label="Назад на ход игрока и ответ Stockfish" title="Назад на ход игрока и ответ Stockfish">
-              <Image src={backIconSrc} alt="" width={34} height={34} />
-            </button>
-            <button className="icon-action-button reset" type="button" onClick={resetPosition} aria-label="Начать заново" title="Начать заново">
-              <Image src={resetIconSrc} alt="" width={34} height={34} />
-            </button>
-          </div>
 
           <section className="magic-preview" aria-label="Будущая магия">
             <div>
@@ -768,11 +837,44 @@ export function ChessGameClient({
                 );
               })}
             </div>
+            <div className="battle-status-dock">
+              <button className="ghost-button status-dialog-button" type="button" onClick={() => setStatusDialogOpen(true)}>
+                Состояние партии
+              </button>
+            </div>
           </section>
+        <div className="game-board-area">
+          <ChessBoardView
+            ariaLabel={`Шахматная доска: ${cardTitle}`}
+            hintFromSquare={engineHintMove?.from ?? null}
+            hintToSquare={engineHintMove?.to ?? null}
+            legalMoveSquares={highlightedSquares}
+            orientation={playerSide}
+            selectedSquare={selectedSquare}
+            squares={boardSquares}
+            onSquareClick={handleSquareClick}
+          />
+          <div className="board-history-actions" aria-label="Управление ходами">
+            <button className="icon-action-button" type="button" disabled={!canUndoFullTurn} onClick={() => undoMoves(2)} aria-label="Назад на ход игрока и ответ Stockfish" title="Назад на ход игрока и ответ Stockfish">
+              <Image src={backIconSrc} alt="" width={34} height={34} />
+            </button>
+            <button className="icon-action-button reset" type="button" onClick={resetPosition} aria-label="Начать заново" title="Начать заново">
+              <Image src={resetIconSrc} alt="" width={34} height={34} />
+            </button>
+          </div>
         </div>
 
-        <section className="rules-panel" aria-label="Состояние партии">
-          <div className={`game-notice ${notice.tone}`} role="status">{notice.text}</div>
+        {statusDialogOpen ? (
+          <div className="battle-status-overlay" role="presentation" onClick={() => setStatusDialogOpen(false)}>
+            <section className="rules-panel battle-status-dialog" aria-label="Состояние партии" aria-modal="true" role="dialog" onClick={(event) => event.stopPropagation()}>
+              <div className="battle-status-dialog-header">
+                <div>
+                  <p className="eyebrow">Состояние партии</p>
+                  <h2>Партия и история</h2>
+                </div>
+                <button className="icon-action-button" type="button" onClick={() => setStatusDialogOpen(false)} aria-label="Закрыть состояние партии" title="Закрыть">×</button>
+              </div>
+              <div className={`game-notice ${notice.tone}`} role="status">{notice.text}</div>
           <dl className="battle-summary-strip" aria-label="Ключевые показатели">
             <div>
               <dt>Цель</dt>
@@ -878,7 +980,9 @@ export function ChessGameClient({
               </button>
             </div>
           </div>
-        </section>
+            </section>
+          </div>
+        ) : null}
       </div>
 
       {engineErrorDialogOpen ? (
@@ -982,11 +1086,11 @@ export function ChessGameClient({
 
 function getMagicPieceIconSrc(upgrade: MagicUpgradeSpec, playerSide: PlayerSide) {
   const color = playerSide === "white" ? "white" : "black";
-  if (upgrade.replacementPiece === "b") return publicPath(`/pieces/${color}-bishop.png`);
-  if (upgrade.replacementPiece === "n") return publicPath(`/pieces/${color}-knight.png`);
-  if (upgrade.replacementPiece === "r") return publicPath(`/pieces/${color}-rook.png`);
-  if (upgrade.replacementPiece === "q") return publicPath(`/pieces/${color}-queen.png`);
-  return publicPath(`/pieces/${color}-pawn.png`);
+  if (upgrade.replacementPiece === "b") return publicPath(`/pieces/default/${color}-bishop.png`);
+  if (upgrade.replacementPiece === "n") return publicPath(`/pieces/default/${color}-knight.png`);
+  if (upgrade.replacementPiece === "r") return publicPath(`/pieces/default/${color}-rook.png`);
+  if (upgrade.replacementPiece === "q") return publicPath(`/pieces/default/${color}-queen.png`);
+  return publicPath(`/pieces/default/${color}-pawn.png`);
 }
 
 function countPlayerCaptures(moveHistory: string[]) {
@@ -1023,6 +1127,18 @@ function passTurnInFen(fen: string) {
   return parts.join(" ");
 }
 
+function getEngineSearchDifficulty(mode: PendingEngineRequest["mode"], battleDifficulty: EngineDifficultyLevel) {
+  return mode === "hint" || mode === "magic_hint" ? STRONGEST_ENGINE_DIFFICULTY : battleDifficulty;
+}
+
+function configureEngineStrength(worker: Worker, mode: PendingEngineRequest["mode"], difficulty: EngineDifficultyLevel) {
+  const isHint = mode === "hint" || mode === "magic_hint";
+
+  worker.postMessage("setoption name UCI_LimitStrength value " + (isHint ? "false" : "true"));
+  worker.postMessage("setoption name Skill Level value " + difficulty.skillLevel);
+  if (!isHint) worker.postMessage("setoption name UCI_Elo value " + difficulty.uciElo);
+}
+
 function getMagicTooltip(upgrade: MagicUpgradeSpec) {
   if (upgrade.replacementPiece === "b") return "Обращает пешку в слона";
   if (upgrade.replacementPiece === "n") return "Обращает пешку в коня";
@@ -1034,6 +1150,10 @@ function getMagicTooltip(upgrade: MagicUpgradeSpec) {
 function isCurrentTurnPiece(square: FenBoardSquare, turn: "w" | "b") {
   if (!square.piece) return false;
   return turn === "w" ? square.piece.code === square.piece.code.toUpperCase() : square.piece.code === square.piece.code.toLowerCase();
+}
+
+function countPlayerMoves(completedHalfMoves: number) {
+  return Math.ceil(completedHalfMoves / 2);
 }
 
 function getGameStatus(chess: Chess) {

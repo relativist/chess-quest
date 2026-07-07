@@ -4,7 +4,8 @@ This document defines future objective rules for Chess Quest cards. The MVP disp
 
 ## Objective Types
 
-- `checkmate`: victory when the player checkmates the opponent. This is always a valid fallback victory condition for every card.
+- `checkmate`: victory when the player checkmates the opponent. This is always a valid fallback victory condition for every card except limited mate-in objectives.
+- `checkmate_in_moves`: victory when the player checkmates the opponent in the configured number of player moves, 1-3. Earlier checkmate also satisfies this objective; later checkmate does not.
 - `give_check`: victory when the player's move gives check. Checkmate also satisfies this objective.
 - `capture_piece`: victory when the player's move captures the configured target piece type. Checkmate also satisfies this objective.
 - `survive_half_moves`: victory when the configured number of legal half-moves is reached without losing. Checkmate before the counter is reached also satisfies this objective.
@@ -13,7 +14,8 @@ This document defines future objective rules for Chess Quest cards. The MVP disp
 
 - The player side is the side to move in the starting FEN.
 - Objective checks are evaluated after each legal player move from `chess.js`.
-- If `chess.isCheckmate()` is true after the player's move, the card is completed regardless of the configured objective.
+- If `chess.isCheckmate()` is true after the player's move, the card is completed regardless of the configured objective, except `checkmate_in_moves` after its move limit.
+- `checkmate_in_moves` counts only player moves. Because the player always starts from the side to move in the FEN, this is `ceil(completedHalfMoves / 2)` after a legal player move.
 - `give_check` uses `chess.isCheck()` after the move.
 - `capture_piece` uses the verbose `Move.captured` field from `chess.js` and maps it to the configured piece type.
 - `survive_half_moves` counts legal half-moves from the game history, including both player moves and Stockfish replies.

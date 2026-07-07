@@ -1,8 +1,10 @@
-import type { DemoQuestCardSeed } from "@/lib/demo-seed";
+import type {DemoQuestCardSeed} from "@/lib/demo-seed";
 
 export type CardObjective =
   | { type: "checkmate" }
+  | { moves: number; type: "checkmate_in_moves" }
   | { type: "give_check" }
+  | { checks: number; type: "give_checks" }
   | { piece: "bishop" | "knight" | "pawn" | "queen" | "rook"; type: "capture_piece" }
   | { pieces: number; type: "capture_pieces" }
   | { halfMoves: number; type: "survive_half_moves" };
@@ -16,6 +18,8 @@ export type ObjectiveEvaluationInput = {
   capturedPiece?: string;
   capturedPieces?: number;
   completedHalfMoves: number;
+  completedPlayerMoves?: number;
+  givenChecks?: number;
   isCheck: boolean;
   isCheckmate: boolean;
 };
@@ -40,8 +44,12 @@ export function describeCardObjective(objective: CardObjective) {
       return "Съесть фигур противника: " + objective.pieces + ". Мат также засчитывает победу.";
     case "checkmate":
       return "Поставить мат. Это основная цель карточки.";
+    case "checkmate_in_moves":
+      return "Поставить мат за " + moveCountLabel(objective.moves) + " или раньше.";
     case "give_check":
       return "Поставить шах. Мат также засчитывает победу.";
+    case "give_checks":
+      return "Поставить " + checkCountLabel(objective.checks) + " королю. Мат также засчитывает победу.";
     case "survive_half_moves":
       return "Продержаться " + objective.halfMoves + " полуходов. Мат также засчитывает победу.";
   }
@@ -55,14 +63,18 @@ export function objectiveShortLabel(objective: CardObjective) {
       return "Съесть фигур: " + objective.pieces;
     case "checkmate":
       return "Мат";
+    case "checkmate_in_moves":
+      return "Мат за " + moveCountLabel(objective.moves);
     case "give_check":
       return "Поставить шах";
+    case "give_checks":
+      return "Поставить шахов: " + objective.checks;
     case "survive_half_moves":
       return "Продержаться " + objective.halfMoves + " полуходов";
   }
 }
 
-export function objectiveProgressLabel(objective: CardObjective, completedHalfMoves: number, capturedPieces = 0) {
+export function objectiveProgressLabel(objective: CardObjective, completedHalfMoves: number, capturedPieces = 0, givenChecks = 0) {
   switch (objective.type) {
     case "capture_piece":
       return "Цель: съесть " + pieceLabel(objective.piece);
@@ -72,8 +84,16 @@ export function objectiveProgressLabel(objective: CardObjective, completedHalfMo
     }
     case "checkmate":
       return "Цель: поставить мат";
+    case "checkmate_in_moves": {
+      const current = Math.min(Math.ceil(completedHalfMoves / 2), objective.moves);
+      return current + " / " + objective.moves + " ходов до мата";
+    }
     case "give_check":
       return "Цель: поставить шах";
+    case "give_checks": {
+      const current = Math.min(givenChecks, objective.checks);
+      return current + " / " + objective.checks + " шахов";
+    }
     case "survive_half_moves": {
       const current = Math.min(completedHalfMoves, objective.halfMoves);
       return current + " / " + objective.halfMoves + " полуходов";
@@ -82,7 +102,7 @@ export function objectiveProgressLabel(objective: CardObjective, completedHalfMo
 }
 
 export function evaluateCardObjective(objective: CardObjective, input: ObjectiveEvaluationInput): ObjectiveResult {
-  if (input.isCheckmate) {
+  if (input.isCheckmate && objective.type !== "checkmate_in_moves") {
     return { completed: true, label: "Мат. Цель карточки выполнена." };
   }
 
@@ -101,9 +121,26 @@ export function evaluateCardObjective(objective: CardObjective, input: Objective
     }
     case "checkmate":
       return { completed: false, label: objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0) };
+    case "checkmate_in_moves": {
+      const completedPlayerMoves = input.completedPlayerMoves ?? Math.ceil(input.completedHalfMoves / 2);
+      if (input.isCheckmate && completedPlayerMoves <= objective.moves) {
+        return { completed: true, label: "Мат за " + moveCountLabel(completedPlayerMoves) + ". Цель карточки выполнена." };
+      }
+      if (input.isCheckmate) {
+        return { completed: false, label: "Мат поставлен позже лимита " + moveCountLabel(objective.moves) + "." };
+      }
+      return { completed: false, label: objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0) };
+    }
     case "give_check":
       if (input.isCheck) return { completed: true, label: "Шах поставлен. Цель карточки выполнена." };
       return { completed: false, label: objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0) };
+    case "give_checks": {
+      const givenChecks = input.givenChecks ?? 0;
+      if (givenChecks >= objective.checks) {
+        return { completed: true, label: "Поставлено шахов королю: " + objective.checks + "." };
+      }
+      return { completed: false, label: objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0, givenChecks) };
+    }
     case "survive_half_moves":
       if (input.completedHalfMoves >= objective.halfMoves) {
         return { completed: true, label: "Вы продержались " + objective.halfMoves + " полуходов." };
@@ -115,9 +152,11 @@ export function evaluateCardObjective(objective: CardObjective, input: Objective
 export function normalizeCardObjective(value: unknown, fallback: CardObjective = { type: "checkmate" }): CardObjective {
   if (!value || typeof value !== "object") return fallback;
 
-  const objective = value as Partial<CardObjective> & { halfMoves?: unknown; pieces?: unknown };
+  const objective = value as Partial<CardObjective> & { checks?: unknown; halfMoves?: unknown; moves?: unknown; pieces?: unknown };
 
   if (objective.type === "checkmate" || objective.type === "give_check") return { type: objective.type };
+  if (objective.type === "give_checks") return { checks: toObjectiveCount(objective.checks, 3), type: "give_checks" };
+  if (objective.type === "checkmate_in_moves") return { moves: toObjectiveCount(objective.moves, 1, 99), type: "checkmate_in_moves" };
   if (objective.type === "survive_half_moves") return { halfMoves: toObjectiveCount(objective.halfMoves, 8), type: "survive_half_moves" };
   if (objective.type === "capture_pieces") return { pieces: toObjectiveCount(objective.pieces, 1), type: "capture_pieces" };
   if (objective.type === "capture_piece" && isCapturePiece(objective.piece)) return { piece: objective.piece, type: "capture_piece" };
@@ -125,10 +164,10 @@ export function normalizeCardObjective(value: unknown, fallback: CardObjective =
   return fallback;
 }
 
-function toObjectiveCount(value: unknown, fallback: number) {
+function toObjectiveCount(value: unknown, fallback: number, max = 99) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
-  return Math.min(99, Math.max(1, Math.floor(parsed)));
+  return Math.min(max, Math.max(1, Math.floor(parsed)));
 }
 
 function isCapturePiece(piece: unknown): piece is Extract<CardObjective, { type: "capture_piece" }>["piece"] {
@@ -151,6 +190,16 @@ function fallbackObjective(difficulty: DemoQuestCardSeed["difficulty"]): CardObj
   if (difficulty <= 2) return { type: "give_check" };
   if (difficulty <= 5) return { halfMoves: 8, type: "survive_half_moves" };
   return { type: "checkmate" };
+}
+
+function moveCountLabel(moves: number) {
+  if (moves === 1) return "1 ход";
+  return moves + " хода";
+}
+
+function checkCountLabel(checks: number) {
+  if (checks === 1) return "1 шах";
+  return checks + " шахов";
 }
 
 function pieceLabel(piece: CardObjective extends infer Objective ? Objective extends { piece: infer Piece } ? Piece : never : never) {

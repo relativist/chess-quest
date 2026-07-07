@@ -1,9 +1,16 @@
-import type { Prisma } from "@/generated/prisma/client";
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
-import { STARTING_FEN, validateBoardTemplateFen } from "@/lib/chess/fen-validation";
-import { demoMapSeed, demoMapSeeds, getCardStartingFen, type DemoQuestCardSeed, type DemoQuestMapSeed, type Difficulty } from "@/lib/demo-seed";
-import { normalizeCardObjective, type CardObjective } from "@/lib/quest/card-objectives";
-import { ensureQuestDataReady } from "@/lib/quest/ensure-demo-map";
+import type {Prisma} from "@/generated/prisma/client";
+import {getPrisma, isDatabaseConfigured} from "@/lib/db/prisma";
+import {STARTING_FEN, validateBoardTemplateFen} from "@/lib/chess/fen-validation";
+import {
+    demoMapSeed,
+    demoMapSeeds,
+    type DemoQuestCardSeed,
+    type DemoQuestMapSeed,
+    type Difficulty,
+    getCardStartingFen
+} from "@/lib/demo-seed";
+import {type CardObjective, normalizeCardObjective} from "@/lib/quest/card-objectives";
+import {ensureQuestDataReady} from "@/lib/quest/ensure-demo-map";
 
 const mapInclude = {
   cards: {
@@ -320,8 +327,14 @@ function validateEditorMap(input: MapEditorMapInput) {
     if (!card.text.trim()) return `У карточки ${card.order} пустой текст.`;
     if (!card.congratulationsText.trim()) return `У карточки ${card.order} пустой текст поздравления.`;
     if (card.rewardGold <= 0 || card.rewardScore <= 0) return `У карточки ${card.order} награда должна быть больше нуля.`;
-    if ((card.objective.type === "survive_half_moves" && card.objective.halfMoves <= 0) || (card.objective.type === "capture_pieces" && card.objective.pieces <= 0)) {
+    if ((card.objective.type === "survive_half_moves" && card.objective.halfMoves <= 0) || (card.objective.type === "capture_pieces" && card.objective.pieces <= 0) || (card.objective.type === "give_checks" && card.objective.checks <= 0)) {
       return `У карточки ${card.order} цель должна иметь число больше нуля.`;
+    }
+    if (card.objective.type === "checkmate_in_moves" && (card.objective.moves < 1 || card.objective.moves >= 100)) {
+      return `У карточки ${card.order} цель должна быть на 1-99 ходов.`;
+    }
+    if (card.objective.type === "give_checks" && (card.objective.checks < 1 || card.objective.checks >= 100)) {
+      return `У карточки ${card.order} цель должна быть на 1-99 шахов.`;
     }
 
     if (card.fen.trim()) {

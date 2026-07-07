@@ -1,5 +1,5 @@
-import { listPublicUsers } from "@/lib/auth/auth-store";
-import { getAllUserProgressSummaries } from "@/lib/quest/progress-store";
+import {listPublicUsers} from "@/lib/auth/auth-store";
+import {getAllUserGoldBalances, getAllUserProgressSummaries} from "@/lib/quest/progress-store";
 
 export type LeaderboardUser = {
   completedCards: number;
@@ -13,7 +13,7 @@ export type LeaderboardUser = {
 };
 
 export async function getUsersLeaderboard(): Promise<LeaderboardUser[]> {
-  const [users, progress] = await Promise.all([listPublicUsers(), getAllUserProgressSummaries()]);
+  const [users, progress, goldBalances] = await Promise.all([listPublicUsers(), getAllUserProgressSummaries(), getAllUserGoldBalances()]);
 
   return users
     .filter((user) => user.role === "PLAYER")
@@ -25,7 +25,7 @@ export async function getUsersLeaderboard(): Promise<LeaderboardUser[]> {
         login: user.login,
         displayName: user.displayName,
         completedCards: summary.completedCards,
-        earnedGold: summary.earnedGold,
+        earnedGold: goldBalances.get(user.id) ?? 0,
         earnedScore: summary.earnedScore,
         rank: 0,
         wins: summary.wins,

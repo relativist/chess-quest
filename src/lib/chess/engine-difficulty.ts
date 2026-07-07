@@ -1,4 +1,4 @@
-import type { Difficulty } from "@/lib/demo-seed";
+import type {Difficulty} from "@/lib/demo-seed";
 
 export type EngineDifficultyLevel = {
   difficulty: Difficulty;
@@ -93,6 +93,8 @@ export const ENGINE_DIFFICULTY_LEVELS: Record<Difficulty, EngineDifficultyLevel>
     description: "Максимум MVP-шкалы, гроссмейстерский ориентир.",
   },
 };
+
+export const STRONGEST_ENGINE_DIFFICULTY = ENGINE_DIFFICULTY_LEVELS[8];
 
 export function getEngineDifficulty(difficulty: Difficulty | number) {
   return ENGINE_DIFFICULTY_LEVELS[normalizeDifficulty(difficulty)];

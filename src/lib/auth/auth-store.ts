@@ -1,12 +1,17 @@
-import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import {randomBytes, scrypt as scryptCallback, timingSafeEqual} from "node:crypto";
+import {mkdir, readFile, writeFile} from "node:fs/promises";
 import path from "node:path";
-import { promisify } from "node:util";
-import { getPrisma, isDatabaseConfigured } from "@/lib/db/prisma";
+import {promisify} from "node:util";
+import {getPrisma, isDatabaseConfigured} from "@/lib/db/prisma";
 
 const scrypt = promisify(scryptCallback);
-const dataDir = path.join(process.cwd(), ".data");
-const usersFile = path.join(dataDir, "auth-users.json");
+function getDataDir() {
+  return process.env.CHESS_QUEST_DATA_DIR || path.join(process.cwd(), ".data");
+}
+
+function getUsersFile() {
+  return path.join(getDataDir(), "auth-users.json");
+}
 let databaseUsersReady: Promise<void> | null = null;
 
 export type AuthRole = "PLAYER" | "MAP_EDITOR";
@@ -18,6 +23,7 @@ export type AuthUser = {
   displayName: string;
   passwordHash: string;
   role: AuthRole;
+  gold: number;
   createdAt: string;
 };
 
@@ -57,6 +63,7 @@ export async function registerUser(input: { login: string; email?: string; passw
         displayName,
         passwordHash: await hashPassword(password),
         role: "PLAYER",
+        gold: 0,
       },
     });
 
@@ -74,6 +81,7 @@ export async function registerUser(input: { login: string; email?: string; passw
     displayName,
     passwordHash: await hashPassword(password),
     role: "PLAYER",
+    gold: 0,
     createdAt: new Date().toISOString(),
   };
 
@@ -142,7 +150,7 @@ async function readStore(): Promise<StoredUsers> {
 async function readFileStore(): Promise<StoredUsers> {
   let store: StoredUsers;
   try {
-    const content = await readFile(usersFile, "utf8");
+    const content = await readFile(getUsersFile(), "utf8");
     store = JSON.parse(content) as StoredUsers;
   } catch {
     store = { users: [] };
@@ -155,9 +163,16 @@ async function ensureDemoUsers(store: StoredUsers): Promise<StoredUsers> {
   let changed = false;
 
   store.users = store.users.map((user) => {
-    if (user.role) return user;
-    changed = true;
-    return { ...user, role: "PLAYER" };
+    const next = { ...user };
+    if (!next.role) {
+      next.role = "PLAYER";
+      changed = true;
+    }
+    if (typeof next.gold !== "number") {
+      next.gold = 0;
+      changed = true;
+    }
+    return next;
   });
 
   const mapUser = store.users.find((user) => user.login === "map");
@@ -175,6 +190,7 @@ async function ensureDemoUsers(store: StoredUsers): Promise<StoredUsers> {
       displayName: "Редактор карт",
       passwordHash: await hashPassword("map"),
       role: "MAP_EDITOR",
+      gold: 0,
       createdAt: new Date().toISOString(),
     });
     changed = true;
@@ -185,7 +201,8 @@ async function ensureDemoUsers(store: StoredUsers): Promise<StoredUsers> {
 }
 
 async function writeStore(store: StoredUsers) {
-  await mkdir(dataDir, { recursive: true });
+  const usersFile = getUsersFile();
+  await mkdir(path.dirname(usersFile), { recursive: true });
   await writeFile(usersFile, `${JSON.stringify(store, null, 2)}\n`, "utf8");
 }
 
@@ -221,6 +238,7 @@ async function ensureDatabaseUsersOnce() {
         login: user.login,
         passwordHash: user.passwordHash,
         role: user.role,
+        gold: user.gold,
       },
     });
   }
@@ -250,6 +268,39 @@ function normalizeEmail(email: string | undefined) {
   return normalized || null;
 }
 
+export async function getStoredUserGold(userId: string | undefined) {
+  if (!userId) return 0;
+
+  const store = await readStore();
+  return store.users.find((user) => user.id === userId)?.gold ?? 0;
+}
+
+export async function getAllStoredUserGoldBalances() {
+  const store = await readStore();
+  return new Map(store.users.map((user) => [user.id, user.gold]));
+}
+
+export async function incrementStoredUserGold(userId: string, amount: number) {
+  const store = await readStore();
+  const user = store.users.find((candidate) => candidate.id === userId);
+  if (!user) return 0;
+
+  user.gold = Math.max(0, user.gold + amount);
+  await writeStore(store);
+  return user.gold;
+}
+
+export async function spendStoredUserGold(userId: string, costGold: number) {
+  const store = await readStore();
+  const user = store.users.find((candidate) => candidate.id === userId);
+  const availableGold = user?.gold ?? 0;
+  if (!user || availableGold < costGold) return { availableGold, ok: false };
+
+  user.gold = availableGold - costGold;
+  await writeStore(store);
+  return { availableGold: user.gold, ok: true };
+}
+
 function toPublicUser(user: AuthUser): PublicAuthUser {
   const { passwordHash: _passwordHash, ...publicUser } = user;
   void _passwordHash;
@@ -264,6 +315,7 @@ function toAuthUser(user: {
   login: string;
   passwordHash: string;
   role: string;
+  gold: number;
 }): AuthUser {
   return {
     id: user.id,
@@ -272,6 +324,7 @@ function toAuthUser(user: {
     displayName: user.displayName,
     passwordHash: user.passwordHash,
     role: user.role === "MAP_EDITOR" ? "MAP_EDITOR" : "PLAYER",
+    gold: user.gold,
     createdAt: user.createdAt.toISOString(),
   };
 }

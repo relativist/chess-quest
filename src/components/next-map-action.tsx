@@ -1,7 +1,6 @@
 "use client";
 
-import { useRef } from "react";
-import { NEXT_MAP_UNLOCK_PERCENT } from "@/lib/quest/map-unlock";
+import {useRef} from "react";
 
 type NextMapActionProps = {
   canOpenNextMap: boolean;
@@ -11,7 +10,7 @@ type NextMapActionProps = {
 export function NextMapAction({ canOpenNextMap, completionPercent }: NextMapActionProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = canOpenNextMap ? "next-map-ready-title" : "next-map-locked-title";
-  const remainingPercent = Math.max(0, NEXT_MAP_UNLOCK_PERCENT - completionPercent);
+  const remainingPercent = Math.max(0, 100 - completionPercent);
 
   function openDialog() {
     dialogRef.current?.showModal();
@@ -31,16 +30,16 @@ export function NextMapAction({ canOpenNextMap, completionPercent }: NextMapActi
         <div className="battle-dialog-header">
           <div>
             <p className="eyebrow">Следующая карта</p>
-            <h2 id={titleId}>{canOpenNextMap ? "Мы над этим работаем" : "Карта пока закрыта"}</h2>
+            <h2 id={titleId}>{canOpenNextMap ? "Карта открыта" : "Карта пока закрыта"}</h2>
           </div>
           <button className="dialog-close" type="button" aria-label="Закрыть" onClick={closeDialog}>×</button>
         </div>
 
         <div className="next-map-dialog-body">
           {canOpenNextMap ? (
-            <p>Ты набрал {completionPercent}% очков текущей карты. Следующая карта откроется, когда мы добавим новую локацию.</p>
+            <p>Текущая карта пройдена. Следующая карта открыта.</p>
           ) : (
-            <p>Нужно набрать минимум {NEXT_MAP_UNLOCK_PERCENT}% очков текущей карты. Сейчас: {completionPercent}%, осталось {remainingPercent}%.</p>
+            <p>Следующая карта откроется, когда все карточки текущей карты будут пройдены. Сейчас: {completionPercent}%, осталось {remainingPercent}%.</p>
           )}
           <div className="next-map-threshold" aria-label="Порог открытия следующей карты">
             <span style={{ width: `${Math.min(100, completionPercent)}%` }} />

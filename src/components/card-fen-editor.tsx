@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { saveMapEditorAction } from "@/app/map/editor/actions";
-import { ChessBoardView } from "@/components/chess-board-view";
-import { RightSideToast } from "@/components/right-side-toast";
-import { fenToBoardSquares } from "@/lib/chess/fen-board";
-import { STARTING_FEN, validateBoardTemplateFen } from "@/lib/chess/fen-validation";
-import type { DemoQuestCardSeed } from "@/lib/demo-seed";
-import { normalizeCardObjective, objectiveShortLabel, type CardObjective } from "@/lib/quest/card-objectives";
-import type { MapEditorCardInput } from "@/lib/quest/quest-repository";
+import {useEffect, useMemo, useState} from "react";
+import {useRouter} from "next/navigation";
+import {saveMapEditorAction} from "@/app/map/editor/actions";
+import {ChessBoardView} from "@/components/chess-board-view";
+import {RightSideToast} from "@/components/right-side-toast";
+import {fenToBoardSquares} from "@/lib/chess/fen-board";
+import {STARTING_FEN, validateBoardTemplateFen} from "@/lib/chess/fen-validation";
+import type {DemoQuestCardSeed} from "@/lib/demo-seed";
+import {type CardObjective, objectiveShortLabel} from "@/lib/quest/card-objectives";
+import type {MapEditorCardInput} from "@/lib/quest/quest-repository";
 
 type CardFenEditorProps = {
   cards: Array<DemoQuestCardSeed & { initialFen: string }>;
@@ -110,13 +110,15 @@ export function CardFenEditor({ cards, mapDescription, mapIsPublished, mapSlug, 
       return;
     }
 
-    showNotification("Карта сохранена в PostgreSQL.", "success");
+    showNotification("Сохранено.", "success");
     router.refresh();
   }
 
   if (!selectedCard) {
     return (
-      <div className="editor-layout">
+      <>
+        {notification ? <RightSideToast key={notification.id} message={notification.text} tone={notification.tone} /> : null}
+        <div className="editor-layout">
         <aside className="editor-card-list" aria-label="Карточки карты">
           <button className="add-card-button" type="button" onClick={addCard}>+ Добавить карточку</button>
         </aside>
@@ -139,20 +141,21 @@ export function CardFenEditor({ cards, mapDescription, mapIsPublished, mapSlug, 
 
           <div className="position-note">На этой карте пока нет карточек. Добавьте первую карточку слева.</div>
 
-          {notification ? <RightSideToast key={notification.id} message={notification.text} tone={notification.tone} /> : null}
-
           <div className="editor-actions">
             <button type="button" disabled={isSaving} onClick={saveMap}>
               {isSaving ? "Сохранение..." : "Сохранить карту"}
             </button>
           </div>
         </section>
-      </div>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="editor-layout">
+    <>
+      {notification ? <RightSideToast key={notification.id} message={notification.text} tone={notification.tone} /> : null}
+      <div className="editor-layout">
       <aside className="editor-card-list" aria-label="Карточки карты">
         <button className="add-card-button" type="button" onClick={addCard}>+ Добавить карточку</button>
         {editorCards.map((card) => (
@@ -215,11 +218,37 @@ export function CardFenEditor({ cards, mapDescription, mapIsPublished, mapSlug, 
                 onChange={(event) => updateSelectedDraft({ objective: createObjectiveByType(event.target.value, selectedCard.objective) })}
               >
                 <option value="checkmate">Поставить мат</option>
+                <option value="checkmate_in_moves">Поставить мат за N ходов</option>
                 <option value="give_check">Поставить шах</option>
+                <option value="give_checks">Поставить N шахов королю</option>
                 <option value="survive_half_moves">Продержаться N полуходов</option>
                 <option value="capture_pieces">Съесть N фигур противника</option>
               </select>
             </label>
+            {selectedCard.objective.type === "checkmate_in_moves" ? (
+              <label>
+                Ходов
+                <input
+                  min={1}
+                  max={99}
+                  type="number"
+                  value={selectedCard.objective.moves}
+                  onChange={(event) => updateSelectedDraft({ objective: { moves: Number(event.target.value), type: "checkmate_in_moves" } })}
+                />
+              </label>
+            ) : null}
+            {selectedCard.objective.type === "give_checks" ? (
+              <label>
+                Шахов
+                <input
+                  min={1}
+                  max={99}
+                  type="number"
+                  value={selectedCard.objective.checks}
+                  onChange={(event) => updateSelectedDraft({ objective: { checks: Number(event.target.value), type: "give_checks" } })}
+                />
+              </label>
+            ) : null}
             {selectedCard.objective.type === "survive_half_moves" ? (
               <label>
                 Полуходов
@@ -302,8 +331,6 @@ export function CardFenEditor({ cards, mapDescription, mapIsPublished, mapSlug, 
           </div>
         ) : null}
 
-        {notification ? <RightSideToast key={notification.id} message={notification.text} tone={notification.tone} /> : null}
-
         <div className="editor-preview-row">
           <ChessBoardView ariaLabel="Предпросмотр FEN" className="editor-board" squares={previewSquares} />
           <div className="editor-actions">
@@ -315,6 +342,7 @@ export function CardFenEditor({ cards, mapDescription, mapIsPublished, mapSlug, 
         </div>
       </section>
     </div>
+    </>
   );
 }
 
@@ -324,6 +352,14 @@ function toEditorObjectiveType(objective: CardObjective) {
 
 function createObjectiveByType(type: string, current: CardObjective): CardObjective {
   if (type === "give_check") return { type: "give_check" };
+  if (type === "give_checks") {
+    const checks = current.type === "give_checks" ? current.checks : 3;
+    return { checks, type: "give_checks" };
+  }
+  if (type === "checkmate_in_moves") {
+    const moves = current.type === "checkmate_in_moves" ? current.moves : 1;
+    return { moves, type: "checkmate_in_moves" };
+  }
   if (type === "survive_half_moves") {
     const halfMoves = current.type === "survive_half_moves" ? current.halfMoves : 8;
     return { halfMoves, type: "survive_half_moves" };
@@ -357,8 +393,14 @@ function getDraftValidationError(cards: EditorCardDraft[]) {
     if (!card.text.trim()) return "Заполните текст карточки " + card.order + ".";
     if (!card.congratulationsText.trim()) return "Заполните поздравление карточки " + card.order + ".";
     if (card.rewardGold <= 0 || card.rewardScore <= 0) return "Награды карточки " + card.order + " должны быть больше нуля.";
-    if ((card.objective.type === "survive_half_moves" && card.objective.halfMoves <= 0) || (card.objective.type === "capture_pieces" && card.objective.pieces <= 0)) {
+    if ((card.objective.type === "survive_half_moves" && card.objective.halfMoves <= 0) || (card.objective.type === "capture_pieces" && card.objective.pieces <= 0) || (card.objective.type === "give_checks" && card.objective.checks <= 0)) {
       return "Цель карточки " + card.order + " должна иметь число больше нуля.";
+    }
+    if (card.objective.type === "checkmate_in_moves" && (card.objective.moves < 1 || card.objective.moves >= 100)) {
+      return "Цель карточки " + card.order + " должна быть на 1-99 ходов.";
+    }
+    if (card.objective.type === "give_checks" && (card.objective.checks < 1 || card.objective.checks >= 100)) {
+      return "Цель карточки " + card.order + " должна быть на 1-99 шахов.";
     }
     if (card.fen.trim()) {
       const result = validateBoardTemplateFen(card.fen);

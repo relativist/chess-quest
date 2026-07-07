@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useId, useRef } from "react";
 
 type PreBattleCardProps = {
   card: {
@@ -12,6 +11,7 @@ type PreBattleCardProps = {
     earnedGold: number;
     earnedScore: number;
     rewardGold: number;
+    displayRewardGold: number;
     objectiveLabel: string;
     rewardScore: number;
     slug: string;
@@ -21,97 +21,30 @@ type PreBattleCardProps = {
     title: string;
   };
   difficultyLabel: string;
-  enemyImageSrc: string;
+  coinIconSrc: string;
   stars: string;
   alignEnd: boolean;
   highlighted?: boolean;
 };
 
-export function PreBattleCard({ card, difficultyLabel, enemyImageSrc, stars, alignEnd, highlighted = false }: PreBattleCardProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
-
-  function openDialog() {
-    dialogRef.current?.showModal();
-  }
-
-  function closeDialog() {
-    dialogRef.current?.close();
-  }
+export function PreBattleCard({ card, difficultyLabel, coinIconSrc, stars, alignEnd, highlighted = false }: PreBattleCardProps) {
+  const statusLabel = highlighted ? "победа засчитана" : card.completed ? "пройдена" : "не пройдена";
+  const rewardLabel = (card.completed ? "Повторная награда " : "Награда ") + card.displayRewardGold + " монет";
 
   return (
-    <>
-      <article
-        className={`quest-card ${card.completed ? "completed" : "locked"} ${highlighted ? "just-completed" : ""}`}
-        style={{ marginLeft: alignEnd ? "auto" : "0" }}
-      >
-        <div className="card-status">{highlighted ? "Победа засчитана" : card.completed ? "Карточка пройдена" : "Карточка не пройдена"}</div>
-        <div className="card-main">
-          <span className="card-number">{card.order}</span>
-          <div>
-            <h2>{card.title}</h2>
-            <p>{card.text}</p>
-          </div>
-        </div>
-        <div className="card-difficulty" aria-label={`Сложность: ${difficultyLabel}`}>
-          <span>Сложность</span>
-          <strong>{stars}</strong>
-          <em>{difficultyLabel}</em>
-        </div>
-        <button className="primary-action" type="button" onClick={openDialog}>
-          Открыть битву
-        </button>
-      </article>
-
-      <dialog className="battle-dialog" ref={dialogRef} aria-labelledby={titleId}>
-        <div className="enemy-dialog-art">
-          <Image src={enemyImageSrc} alt="" width={520} height={220} />
-        </div>
-        <div className="battle-dialog-header">
-          <div>
-            <p className="eyebrow">Карточка {card.order}</p>
-            <h2 id={titleId}>{card.title}</h2>
-          </div>
-        </div>
-
-        <p className="dialog-goal">{card.text}</p>
-
-        <dl className="dialog-stats">
-          <div>
-            <dt>Цель</dt>
-            <dd>{card.objectiveLabel}</dd>
-          </div>
-          <div>
-            <dt>Награда</dt>
-            <dd>{card.rewardScore} очков и {card.rewardGold} золота</dd>
-          </div>
-          <div>
-            <dt>Повторная победа</dt>
-            <dd>10%: {Math.max(1, Math.floor(card.rewardScore * 0.1))} очков и {Math.max(1, Math.floor(card.rewardGold * 0.1))} золота</dd>
-          </div>
-          <div>
-            <dt>Текущий прогресс</dt>
-            <dd>{card.wins > 0 ? `${card.wins} побед · ${card.earnedScore} очков` : "Еще не побеждено"}</dd>
-          </div>
-          <div>
-            <dt>Сложность противника</dt>
-            <dd>{card.difficulty} / 8 · {difficultyLabel} · {stars}</dd>
-          </div>
-          <div>
-            <dt>Шаблон расстановки</dt>
-            <dd>{card.templateName}</dd>
-          </div>
-        </dl>
-
-        <div className="dialog-actions">
-          <button className="ghost-button" type="button" onClick={closeDialog}>
-            Назад
-          </button>
-          <Link className="primary-action" href={`/game/${card.slug}`}>
-            Начать партию
-          </Link>
-        </div>
-      </dialog>
-    </>
+    <Link
+      className={`quest-card ${card.completed ? "completed" : "locked"} ${highlighted ? "just-completed" : ""}`}
+      href={`/game/${card.slug}`}
+      style={{ marginLeft: alignEnd ? "auto" : "0" }}
+      aria-label={"Открыть битву. Карточка " + card.order + ": " + card.title + ", " + statusLabel + ". Сложность: " + difficultyLabel}
+    >
+      <span className="card-reward-badge" aria-label={rewardLabel}>
+        <span>{card.displayRewardGold}</span>
+        <Image className="coin-icon" src={coinIconSrc} alt="монеты" width={18} height={18} />
+      </span>
+      <span className="card-stars" aria-label={"Сложность: " + difficultyLabel}>{stars}</span>
+      <span className="card-title">{card.title}</span>
+      <span className="card-description">{card.text}</span>
+    </Link>
   );
 }

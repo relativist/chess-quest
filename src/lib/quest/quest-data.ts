@@ -1,9 +1,19 @@
-import { demoMapSeed, demoMapSeeds, type DemoQuestCardSeed, type DemoQuestMapSeed } from "@/lib/demo-seed";
-import { getFenSideToMove, STARTING_FEN, type SideToMove } from "@/lib/chess/fen-validation";
-import { getUserCardProgress } from "@/lib/quest/progress-store";
-import { describeCardObjective, getCardObjective, objectiveShortLabel, type CardObjective } from "@/lib/quest/card-objectives";
-import { canOpenNextMapFromScores, getMapCompletionPercent } from "@/lib/quest/map-unlock";
-import { getGameCardBySlug, getPrimaryPublishedQuestMap, listPublishedQuestMaps, resolveCardStartingFen } from "@/lib/quest/quest-repository";
+import {demoMapSeed, demoMapSeeds, type DemoQuestCardSeed, type DemoQuestMapSeed} from "@/lib/demo-seed";
+import {getFenSideToMove, type SideToMove} from "@/lib/chess/fen-validation";
+import {calculateRepeatCardReward, getUserCardProgress, getUserGold} from "@/lib/quest/progress-store";
+import {
+    type CardObjective,
+    describeCardObjective,
+    getCardObjective,
+    objectiveShortLabel
+} from "@/lib/quest/card-objectives";
+import {canOpenNextMapFromCards, getMapCompletionPercent} from "@/lib/quest/map-unlock";
+import {
+    getGameCardBySlug,
+    getPrimaryPublishedQuestMap,
+    listPublishedQuestMaps,
+    resolveCardStartingFen
+} from "@/lib/quest/quest-repository";
 
 export type QuestMapView = {
   slug: string;
@@ -15,6 +25,7 @@ export type QuestMapView = {
   maxScore: number;
   earnedScore: number;
   earnedGold: number;
+  playerGold: number;
   completedCards: number;
   totalWins: number;
   completionPercent: number;
@@ -42,6 +53,7 @@ export type QuestMapCardView = DemoQuestCardSeed & {
   earnedScore: number;
   objective: CardObjective;
   objectiveLabel: string;
+  displayRewardGold: number;
   wins: number;
 };
 
@@ -100,21 +112,23 @@ export async function getGameCardById(cardId: string): Promise<GameCardView | nu
 }
 
 async function toQuestMapView(map: DemoQuestMapSeed, userId?: string): Promise<QuestMapView> {
-  const progress = await getUserCardProgress(userId);
+  const [progress, playerGold] = await Promise.all([getUserCardProgress(userId), getUserGold(userId)]);
   const cards = map.cards.map<QuestMapCardView>((card) => {
     const cardProgress = progress.get(card.slug);
     const seedScore = card.completed ? card.rewardScore : 0;
     const seedGold = card.completed ? card.rewardGold : 0;
 
     const objective = getCardObjective(card);
+    const completed = card.completed || Boolean(cardProgress?.completed);
 
     return {
       ...card,
-      completed: card.completed || Boolean(cardProgress?.completed),
+      completed,
       earnedGold: seedGold + (cardProgress?.earnedGold ?? 0),
       earnedScore: seedScore + (cardProgress?.earnedScore ?? 0),
       objective,
       objectiveLabel: objectiveShortLabel(objective),
+      displayRewardGold: completed ? calculateRepeatCardReward(card.rewardGold) : card.rewardGold,
       wins: (card.completed ? 1 : 0) + (cardProgress?.wins ?? 0),
     };
   });
@@ -123,7 +137,7 @@ async function toQuestMapView(map: DemoQuestMapSeed, userId?: string): Promise<Q
   const earnedGold = cards.reduce((total, card) => total + card.earnedGold, 0);
   const completedCards = cards.filter((card) => card.completed).length;
   const totalWins = cards.reduce((total, card) => total + card.wins, 0);
-  const completionPercent = getMapCompletionPercent(earnedScore, maxScore);
+  const completionPercent = getMapCompletionPercent(completedCards, cards.length);
 
   return {
     slug: map.slug,
@@ -135,10 +149,11 @@ async function toQuestMapView(map: DemoQuestMapSeed, userId?: string): Promise<Q
     maxScore,
     earnedScore,
     earnedGold,
+    playerGold,
     completedCards,
     totalWins,
     completionPercent,
-    canOpenNextMap: canOpenNextMapFromScores(earnedScore, maxScore),
+    canOpenNextMap: canOpenNextMapFromCards(completedCards, cards.length),
   };
 }
 

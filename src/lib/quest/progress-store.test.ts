@@ -6,6 +6,7 @@ import {
     getAllUserProgressSummaries,
     getUserCardProgress,
     getUserGold,
+    grantUserGold,
     markCardVictory,
     spendUserGold
 } from "./progress-store";
@@ -124,6 +125,16 @@ describe("progress-store rewards", () => {
     expect(await spendUserGold("player-1", 25)).toMatchObject({ availableGold: 50, ok: true });
     expect(await spendUserGold("player-1", 60)).toMatchObject({ availableGold: 50, ok: false });
     expect(await getUserGold("player-1")).toBe(50);
+
+    const progress = await getUserCardProgress("player-1");
+    expect(progress.get("reward-test")).toMatchObject({ earnedGold: 75 });
+  });
+
+  it("grants user gold without changing card reward history", async () => {
+    await markCardVictory("player-1", card);
+
+    expect(await grantUserGold("player-1", 500)).toMatchObject({ availableGold: 575, ok: true });
+    expect(await getUserGold("player-1")).toBe(575);
 
     const progress = await getUserCardProgress("player-1");
     expect(progress.get("reward-test")).toMatchObject({ earnedGold: 75 });

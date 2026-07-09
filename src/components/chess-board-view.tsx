@@ -5,12 +5,19 @@ import {useSyncExternalStore} from "react";
 import type {FenBoardPiece, FenBoardSquare} from "@/lib/chess/fen-board";
 import {publicPath} from "@/lib/routing/public-path";
 
-type BoardTheme = "beige" | "green" | "gray";
+type BoardTheme = "beige" | "blue" | "greenish" | "green" | "gray";
 type PieceTheme =
   | "default"
-  | "draf_tracula"
-  | "fuxia"
-  | "minimal_frog";
+  | "orc"
+  | "super_hero"
+  | "draf-tracula"
+  | "magic_wood"
+  | "magic_goblin"
+  | "magic_bone"
+  | "magic_focus"
+  | "magic_iron"
+  | "magic_jucy"
+  | "chess.com";
 type BoardOrientation = "black" | "white";
 
 type ChessBoardViewProps = {
@@ -28,10 +35,17 @@ type ChessBoardViewProps = {
 const BOARD_THEME_STORAGE_KEY = "chess-quest-board-theme";
 const PIECE_THEME_STORAGE_KEY = "chess-quest-piece-theme";
 const PIECE_THEME_OPTIONS: { label: string; value: PieceTheme }[] = [
-  { label: "Стандартные", value: "default" },
-  { label: "Драфтракула", value: "draf_tracula" },
-  { label: "Фуксия", value: "fuxia" },
-  { label: "Мини-жабы", value: "minimal_frog" },
+  { label: "Lichess.org", value: "default" },
+  { label: "Chess.com", value: "chess.com" },
+  { label: "Орки", value: "orc" },
+  { label: "Супергерои", value: "super_hero" },
+  { label: "Драф-тракула", value: "draf-tracula" },
+  { label: "Магический лес", value: "magic_wood" },
+  { label: "Магический гоблин", value: "magic_goblin" },
+  { label: "Магическая кость", value: "magic_bone" },
+  { label: "Магический фокус", value: "magic_focus" },
+  { label: "Магическое железо", value: "magic_iron" },
+  { label: "Магический сок", value: "magic_jucy" },
 ];
 const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
 const ranks = ["8", "7", "6", "5", "4", "3", "2", "1"];
@@ -67,16 +81,22 @@ export function ChessBoardView({
     <div className={`board-shell ${className ?? ""}`} data-board-theme={boardTheme}>
       <div className="board-controls">
         <label>
-          <span>Доска</span>
-          <select value={boardTheme} onChange={(event) => changeBoardTheme(event.target.value as BoardTheme)}>
-            <option value="beige">Бежевая</option>
+          <span className="board-control-icon-label" title="Доска">
+            <Image className="board-control-icon" src={publicPath("/wall/1/chess-board.png")} alt="Доска" width={30} height={30} />
+          </span>
+          <select aria-label="Доска" value={boardTheme} onChange={(event) => changeBoardTheme(event.target.value as BoardTheme)}>
+            <option value="beige">Коричневая</option>
+            <option value="greenish">Зеленоватая</option>
+            <option value="blue">Голубая</option>
             <option value="green">Зеленая</option>
             <option value="gray">Серая</option>
           </select>
         </label>
         <label>
-          <span>Фигуры</span>
-          <select value={pieceTheme} onChange={(event) => changePieceTheme(event.target.value as PieceTheme)}>
+          <span className="board-control-icon-label" title="Фигуры">
+            <Image className="board-control-icon" src={publicPath("/wall/1/pawn.png")} alt="Фигуры" width={30} height={30} />
+          </span>
+          <select aria-label="Фигуры" value={pieceTheme} onChange={(event) => changePieceTheme(event.target.value as PieceTheme)}>
             {PIECE_THEME_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
@@ -159,6 +179,7 @@ function subscribeToPieceTheme(onStoreChange: () => void) {
 
 function getPieceThemeSnapshot(): PieceTheme {
   const savedTheme = window.localStorage.getItem(PIECE_THEME_STORAGE_KEY);
+  if (savedTheme === "cha-cha-boom") return "chess.com";
   return isPieceTheme(savedTheme) ? savedTheme : "default";
 }
 
@@ -203,5 +224,5 @@ function getServerBoardThemeSnapshot(): BoardTheme {
 }
 
 function isBoardTheme(value: string | null): value is BoardTheme {
-  return value === "beige" || value === "green" || value === "gray";
+  return value === "beige" || value === "blue" || value === "greenish" || value === "green" || value === "gray";
 }

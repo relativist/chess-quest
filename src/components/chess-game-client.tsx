@@ -21,11 +21,13 @@ type EngineStatus = "error" | "loading" | "ready" | "thinking";
 type ChessGameClientProps = {
   backIconSrc: string;
   cardDifficultyLabel: string;
-  cardOrder: number;
   cardSlug: string;
   cardStars: string;
   cardTitle: string;
   checkSoundSrc: string;
+  chessBoardIconSrc: string;
+  chestIconSrc: string;
+  clueIconSrc: string;
   coinIconSrc: string;
   completeCardAction: (formData: FormData) => void | Promise<void>;
   congratulationsText: string;
@@ -34,19 +36,23 @@ type ChessGameClientProps = {
   defeatedHeroImageSrc: string;
   defeatSoundSrc: string;
   difficulty: number;
+  difficultyIconSrc: string;
+  gameStateIconSrc: string;
+  grantSecretGoldAction: () => Promise<SpendMagicGoldResult>;
   initialFen: string;
+  magicIconSrc: string;
   objective: CardObjective;
+  objectiveIconSrc: string;
   objectiveLabel: string;
   playerGold: number;
   playerSide: PlayerSide;
   resetIconSrc: string;
   rewardGold: number;
   rewardScore: number;
-  sideToMoveLabel: string;
+  scoreIconSrc: string;
   spendMagicGoldAction: (formData: FormData) => Promise<SpendMagicGoldResult>;
   stepSoundSrc: string;
   stockfishWorkerSrc: string;
-  templateName: string;
   winSoundSrc: string;
 };
 
@@ -71,14 +77,18 @@ type SpendMagicGoldResult = {
   ok: boolean;
 };
 
+const PLAYER_CLOCK_INITIAL_SECONDS = 10 * 60;
+
 export function ChessGameClient({
   backIconSrc,
   cardDifficultyLabel,
-  cardOrder,
   cardSlug,
   cardStars,
   cardTitle,
   checkSoundSrc,
+  chessBoardIconSrc,
+  chestIconSrc,
+  clueIconSrc,
   coinIconSrc,
   completeCardAction,
   congratulationsText,
@@ -87,19 +97,23 @@ export function ChessGameClient({
   defeatedHeroImageSrc,
   defeatSoundSrc,
   difficulty,
+  difficultyIconSrc,
+  gameStateIconSrc,
+  grantSecretGoldAction,
   initialFen,
+  magicIconSrc,
   objective,
+  objectiveIconSrc,
   objectiveLabel,
   playerGold,
   playerSide,
   resetIconSrc,
   rewardGold,
   rewardScore,
-  sideToMoveLabel,
+  scoreIconSrc,
   spendMagicGoldAction,
   stepSoundSrc,
   stockfishWorkerSrc,
-  templateName,
   winSoundSrc,
 }: ChessGameClientProps) {
   const [fen, setFen] = useState(initialFen);
@@ -122,10 +136,13 @@ export function ChessGameClient({
   const [availableGoldState, setAvailableGoldState] = useState({ sourceGold: playerGold, value: playerGold });
   const [activeMagic, setActiveMagic] = useState<MagicUpgradeSpec | null>(null);
   const [magicPending, setMagicPending] = useState(false);
+  const [secretGoldPending, setSecretGoldPending] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [secretEngineControlsVisible, setSecretEngineControlsVisible] = useState(false);
+  const [remainingSeconds, setRemainingSeconds] = useState(PLAYER_CLOCK_INITIAL_SECONDS);
   const [notice, setNotice] = useState<GameNotice>({
     tone: "info",
-    text: `Вы играете за ${sideLabel(playerSide).toLowerCase()}. Выберите фигуру стороны, которая сейчас ходит.`,
+    text: "Выберите фигуру стороны, которая сейчас ходит.",
   });
 
   const workerRef = useRef<Worker | null>(null);
@@ -137,6 +154,7 @@ export function ChessGameClient({
   const winAudioRef = useRef<HTMLAudioElement | null>(null);
   const defeatAudioRef = useRef<HTMLAudioElement | null>(null);
   const fenRef = useRef(fen);
+  const moveHistoryTitleClickCountRef = useRef(0);
   const moveHistoryRef = useRef(moveHistory);
   const playerCapturedPiecesRef = useRef(playerCapturedPieces);
   const playerGivenChecksRef = useRef(playerGivenChecks);
@@ -153,12 +171,14 @@ export function ChessGameClient({
   const legalMoveSquares = legalMoves.map((move) => move.to);
   const ownPawnSquares = getOwnPawnSquares(boardSquares, playerTurn);
   const highlightedSquares = activeMagic?.target === "own_pawn" ? ownPawnSquares : legalMoveSquares;
-  const status = getGameStatus(chess);
   const isPlayerTurn = chess.turn() === playerTurn;
   const canAskEngine = engineStatus === "ready" && !isGameOver(chess);
   const hasEngineHint = Boolean(engineHintMove);
   const canAcceptEngineSurrender = engineStatus !== "loading" && !isGameOver(chess);
   const canUndoFullTurn = fenHistory.length > 2;
+  const isBattleFinished = defeatDialogOpen || drawDialogOpen || victoryDialogOpen || isGameOver(chess);
+  const hasOpponentMoved = moveHistory.some((move) => move.includes("(Stockfish)"));
+  const isPlayerClockRunning = hasOpponentMoved && isPlayerTurn && !isBattleFinished && !engineErrorDialogOpen;
   const objectiveProgress = objectiveProgressLabel(objective, moveHistory.length, playerCapturedPieces, playerGivenChecks);
 
   useEffect(() => {
@@ -176,6 +196,22 @@ export function ChessGameClient({
   useEffect(() => {
     playerGivenChecksRef.current = playerGivenChecks;
   }, [playerGivenChecks]);
+
+  useEffect(() => {
+    if (!isPlayerClockRunning) return;
+
+    const timerId = window.setInterval(() => {
+      setRemainingSeconds((current) => Math.max(0, current - 1));
+    }, 1000);
+
+    return () => window.clearInterval(timerId);
+  }, [isPlayerClockRunning]);
+
+  useEffect(() => {
+    if (remainingSeconds > 0 || isBattleFinished) return;
+
+    openDefeatDialog("Время вышло. Партия завершилась поражением.");
+  }, [isBattleFinished, remainingSeconds]);
 
   function cancelPendingEngineMove() {
     if (pendingEngineRequestRef.current) {
@@ -608,6 +644,24 @@ export function ChessGameClient({
     }
   }
 
+  async function handleSecretGoldButton() {
+    if (secretGoldPending) return;
+
+    setSecretGoldPending(true);
+    try {
+      const result = await grantSecretGoldAction();
+      setAvailableGoldState({ sourceGold: playerGold, value: result.availableGold });
+      if (!result.ok) {
+        setNotice({ tone: "error", text: result.error ?? "Не удалось добавить монеты." });
+        return;
+      }
+
+      setNotice({ tone: "success", text: "Добавлено 500 монет." });
+    } finally {
+      setSecretGoldPending(false);
+    }
+  }
+
   async function handleSquareClick(square: FenBoardSquare) {
     if (engineStatus === "thinking") {
       setNotice({ tone: "info", text: "Дождитесь хода Stockfish." });
@@ -738,8 +792,18 @@ export function ChessGameClient({
     setNotice({ tone: "info", text: "Фигура выбрана. Доступные ходы отмечены белыми точками." });
   }
 
+  function handleMoveHistoryTitleClick() {
+    if (secretEngineControlsVisible) return;
+
+    moveHistoryTitleClickCountRef.current += 1;
+    if (moveHistoryTitleClickCountRef.current >= 3) {
+      setSecretEngineControlsVisible(true);
+    }
+  }
+
   function resetPosition() {
     setFen(initialFen);
+    setRemainingSeconds(PLAYER_CLOCK_INITIAL_SECONDS);
     setFenHistory([initialFen]);
     setCheckCountHistory([0]);
     moveHistoryRef.current = [];
@@ -758,7 +822,7 @@ export function ChessGameClient({
     setEngineHintMove(null);
     setActiveMagic(null);
     setEngineErrorText("Ошибка движка Stockfish.");
-    setNotice({ tone: "info", text: `Позиция сброшена. Вы играете за ${sideLabel(playerSide).toLowerCase()}.` });
+    setNotice({ tone: "info", text: "Позиция сброшена." });
   }
 
   function undoMoves(count: number) {
@@ -800,12 +864,17 @@ export function ChessGameClient({
       <audio ref={winAudioRef} preload="auto" src={winSoundSrc} />
       <audio ref={defeatAudioRef} preload="auto" src={defeatSoundSrc} />
       <div className="release-battle-shell">
-
+        <div className="battle-side-panel">
+          <section className={`player-clock ${remainingSeconds <= 30 ? "low" : ""}`} aria-label="Оставшееся время игрока">
+            <span className="player-clock-label">Время</span>
+            <span className="player-clock-value">{formatClockTime(remainingSeconds)}</span>
+          </section>
           <section className="magic-preview" aria-label="Будущая магия">
             <div>
-              <h2>Магия</h2>
+              <h2><Image className="panel-title-icon" src={magicIconSrc} alt="Магия" width={64} height={64} /></h2>
               <span className="gold-amount">
-                В сундуке: {availableGold}
+                <Image className="panel-title-icon small" src={chestIconSrc} alt="Сундук" width={44} height={44} />
+                {availableGold}
                 <Image className="coin-icon" src={coinIconSrc} alt="монеты" width={18} height={18} />
               </span>
             </div>
@@ -827,7 +896,7 @@ export function ChessGameClient({
                     {upgrade.replacementPiece ? (
                       <Image className="magic-piece-icon" src={getMagicPieceIconSrc(upgrade, playerSide)} alt={upgrade.title} width={42} height={42} />
                     ) : (
-                      <span className="magic-text-label">{upgrade.title}</span>
+                      <Image className="magic-piece-icon magic-panel-icon" src={clueIconSrc} alt={upgrade.title} width={42} height={42} />
                     )}
                     <span className="magic-price" aria-label={`Стоимость ${upgrade.costGold} монет`}>
                       <span>{upgrade.costGold}</span>
@@ -838,11 +907,12 @@ export function ChessGameClient({
               })}
             </div>
             <div className="battle-status-dock">
-              <button className="ghost-button status-dialog-button" type="button" onClick={() => setStatusDialogOpen(true)}>
-                Состояние партии
+              <button className="ghost-button status-dialog-button icon-only" type="button" onClick={() => setStatusDialogOpen(true)} aria-label="Состояние партии" title="Состояние партии">
+                <Image className="button-icon" src={gameStateIconSrc} alt="" width={48} height={48} />
               </button>
             </div>
           </section>
+        </div>
         <div className="game-board-area">
           <ChessBoardView
             ariaLabel={`Шахматная доска: ${cardTitle}`}
@@ -868,118 +938,83 @@ export function ChessGameClient({
           <div className="battle-status-overlay" role="presentation" onClick={() => setStatusDialogOpen(false)}>
             <section className="rules-panel battle-status-dialog" aria-label="Состояние партии" aria-modal="true" role="dialog" onClick={(event) => event.stopPropagation()}>
               <div className="battle-status-dialog-header">
-                <div>
-                  <p className="eyebrow">Состояние партии</p>
-                  <h2>Партия и история</h2>
+                <div className="battle-status-title">
+                  <Image src={gameStateIconSrc} alt="" width={42} height={42} />
+                  <div>
+                    <p className="eyebrow">Состояние партии</p>
+                    <h2>Партия и цель</h2>
+                  </div>
                 </div>
-                <button className="icon-action-button" type="button" onClick={() => setStatusDialogOpen(false)} aria-label="Закрыть состояние партии" title="Закрыть">×</button>
+                <button className="icon-action-button battle-status-close-button" type="button" onClick={() => setStatusDialogOpen(false)} aria-label="Закрыть состояние партии" title="Закрыть">×</button>
               </div>
               <div className={`game-notice ${notice.tone}`} role="status">{notice.text}</div>
-          <dl className="battle-summary-strip" aria-label="Ключевые показатели">
-            <div>
-              <dt>Цель</dt>
-              <dd>{objectiveProgress}</dd>
-            </div>
-            <div>
-              <dt>Ход</dt>
-              <dd>{turnLabel(chess.turn())}</dd>
-            </div>
-            <div>
-              <dt>Stockfish</dt>
-              <dd>{engineStatusLabel(engineStatus)}</dd>
-            </div>
-          </dl>
-          <dl className="rules-stats">
-            <div>
-              <dt>Карточка</dt>
-              <dd>{cardOrder}</dd>
-            </div>
-            <div>
-              <dt>Цель</dt>
-              <dd>{objectiveLabel}</dd>
-            </div>
-            <div>
-              <dt>Прогресс цели</dt>
-              <dd>{objectiveProgress}</dd>
-            </div>
-            <div>
-              <dt>Шаблон</dt>
-              <dd>{templateName}</dd>
-            </div>
-            <div>
-              <dt>Первый ход</dt>
-              <dd>{sideToMoveLabel}</dd>
-            </div>
-            <div>
-              <dt>Вы играете</dt>
-              <dd>{sideLabel(playerSide)}</dd>
-            </div>
-            <div>
-              <dt>Ход</dt>
-              <dd>{turnLabel(chess.turn())}</dd>
-            </div>
-            <div>
-              <dt>Сложность</dt>
-              <dd>{difficulty} / 8 · {cardDifficultyLabel}</dd>
-            </div>
-            <div>
-              <dt>Звезды</dt>
-              <dd>{cardStars}</dd>
-            </div>
-            <div>
-              <dt>Награда</dt>
-              <dd>{rewardScore} очков и {rewardGold} золота</dd>
-            </div>
-            <div>
-              <dt>Состояние</dt>
-              <dd>{status}</dd>
-            </div>
-            <div>
-              <dt>Stockfish</dt>
-              <dd>{engineStatusLabel(engineStatus)}</dd>
-            </div>
-            <div>
-              <dt>Шах</dt>
-              <dd>{chess.isCheck() ? "Да" : "Нет"}</dd>
-            </div>
-            <div>
-              <dt>Настройка движка</dt>
-              <dd>Skill {engineDifficulty.skillLevel} / 20 · Elo ~{engineDifficulty.uciElo} · {engineDifficulty.moveTimeMs} мс</dd>
-            </div>
-          </dl>
+              <dl className="rules-stats">
+                <div>
+                  <dt><Image className="stat-label-icon" src={objectiveIconSrc} alt="" width={22} height={22} />Цель</dt>
+                  <dd>{objectiveLabel}</dd>
+                </div>
+                <div>
+                  <dt><Image className="stat-label-icon" src={chessBoardIconSrc} alt="" width={22} height={22} />Прогресс цели</dt>
+                  <dd>{objectiveProgress}</dd>
+                </div>
+                <div>
+                  <dt><Image className="stat-label-icon" src={difficultyIconSrc} alt="" width={22} height={22} />Сложность</dt>
+                  <dd>{difficulty} / 8 · {cardDifficultyLabel}</dd>
+                </div>
+                <div>
+                  <dt><Image className="stat-label-icon" src={difficultyIconSrc} alt="" width={22} height={22} />Звезды</dt>
+                  <dd>{cardStars}</dd>
+                </div>
+                <div>
+                  <dt><Image className="stat-label-icon" src={scoreIconSrc} alt="" width={22} height={22} />Награда</dt>
+                  <dd>{rewardScore} очков и {rewardGold} золота</dd>
+                </div>
+                <div>
+                  <dt><Image className="stat-label-icon" src={gameStateIconSrc} alt="" width={22} height={22} />Настройка движка</dt>
+                  <dd>Skill {engineDifficulty.skillLevel} / 20 · Elo ~{engineDifficulty.uciElo} · {engineDifficulty.moveTimeMs} мс</dd>
+                </div>
+              </dl>
 
-          <div className="game-help-icons" aria-label="Справка">
-            <button className="help-bubble" type="button" aria-label="Справка о стороне игрока" title="Игрок играет за сторону, чей ход указан в стартовой позиции. Доска повернута к стороне игрока.">?
-              <span role="tooltip">Игрок играет за сторону, чей ход указан в стартовой позиции. Доска повернута к стороне игрока.</span>
-            </button>
-            <button className="help-bubble" type="button" aria-label="Справка о Stockfish" title="Stockfish думает в браузере через Web Worker. После хода игрока движок отвечает автоматически.">?
-              <span role="tooltip">Stockfish думает в браузере через Web Worker. После хода игрока движок отвечает автоматически.</span>
-            </button>
-          </div>
+              <div className="game-help-icons" aria-label="Справка">
+                <button className="help-bubble" type="button" aria-label="Справка о стороне игрока" title="Игрок играет за сторону, чей ход указан в стартовой позиции. Доска повернута к стороне игрока.">?
+                  <span role="tooltip">Игрок играет за сторону, чей ход указан в стартовой позиции. Доска повернута к стороне игрока.</span>
+                </button>
+                <button className="help-bubble" type="button" aria-label="Справка о Stockfish" title="Stockfish думает в браузере через Web Worker. После хода игрока движок отвечает автоматически.">?
+                  <span role="tooltip">Stockfish думает в браузере через Web Worker. После хода игрока движок отвечает автоматически.</span>
+                </button>
+              </div>
 
-          <div className="move-history">
-            <div>
-              <h2>История ходов</h2>
-            </div>
-            {moveHistory.length > 0 ? (
-              <ol>
-                {moveHistory.map((move, index) => <li key={`${index}-${move}`}>{move}</li>)}
-              </ol>
-            ) : (
-              <p>Ходов пока нет.</p>
-            )}
-          </div>
+              <div className="move-history">
+                <div>
+                  <button className="move-history-title" type="button" onClick={handleMoveHistoryTitleClick}>
+                    <Image className="button-icon" src={chessBoardIconSrc} alt="" width={24} height={24} />
+                    История ходов
+                  </button>
+                </div>
+                {moveHistory.length > 0 ? (
+                  <ol>
+                    {moveHistory.map((move, index) => <li key={`${index}-${move}`}>{move}</li>)}
+                  </ol>
+                ) : (
+                  <p>Ходов пока нет.</p>
+                )}
+              </div>
 
-          <div className="engine-controls board-engine-controls">
-            <div className="engine-actions">
-              <button className="ghost-button" type="button" disabled={!canAskEngine} onClick={handleEngineHintButton}>
-                {hasEngineHint ? "Скрыть подсказку" : isPlayerTurn ? "Спросить лучший ход" : "Дать ход Stockfish"}
-              </button>
-              <button className="ghost-button" type="button" disabled={!canAcceptEngineSurrender} onClick={() => acceptEngineSurrender()}>
-                Принять сдачу движка
-              </button>
-            </div>
-          </div>
+              {secretEngineControlsVisible ? (
+                <div className="engine-controls board-engine-controls secret-engine-controls">
+                  <div className="engine-actions">
+                    <button className="ghost-button secret-engine-button" type="button" disabled={!canAskEngine} onClick={handleEngineHintButton}>
+                      {hasEngineHint ? "Скрыть подсказку" : "Спросить лучший ход"}
+                    </button>
+                    <button className="ghost-button secret-engine-button" type="button" disabled={!canAcceptEngineSurrender} onClick={() => acceptEngineSurrender()}>
+                      Принять сдачу движка
+                    </button>
+                    <button className="ghost-button secret-engine-button" type="button" disabled={secretGoldPending} onClick={() => void handleSecretGoldButton()} aria-label="Добавить 500 монет">
+                      Добавить 500 <Image className="coin-icon" src={coinIconSrc} alt="монеты" width={16} height={16} />
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </section>
           </div>
         ) : null}
@@ -1105,6 +1140,12 @@ function playAudio(audioRef: React.RefObject<HTMLAudioElement | null>) {
   void audio.play().catch(() => undefined);
 }
 
+function formatClockTime(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
 function getOwnPawnSquares(squares: FenBoardSquare[], playerTurn: "w" | "b") {
   return squares.filter((square) => isOwnPawnSquare(square, playerTurn)).map((square) => square.square);
 }
@@ -1156,16 +1197,6 @@ function countPlayerMoves(completedHalfMoves: number) {
   return Math.ceil(completedHalfMoves / 2);
 }
 
-function getGameStatus(chess: Chess) {
-  if (chess.isCheckmate()) return `Мат. Победа ${winnerLabel(chess.turn())}.`;
-  if (chess.isStalemate()) return "Пат. Ничья.";
-  if (chess.isInsufficientMaterial()) return "Ничья: недостаточно материала.";
-  if (chess.isThreefoldRepetition()) return "Ничья: троекратное повторение.";
-  if (chess.isDraw()) return "Ничья.";
-  if (chess.isCheck()) return `Шах. Ходят ${turnLabel(chess.turn())}.`;
-  return "Партия идет.";
-}
-
 function getMoveNotice(chess: Chess, move: Move): GameNotice {
   if (chess.isCheckmate()) {
     return { tone: "success", text: `Мат после ${move.san}. Победа ${winnerLabel(chess.turn())}.` };
@@ -1203,17 +1234,6 @@ function winnerLabel(nextTurn: "w" | "b") {
 
 function playerSideToTurn(side: PlayerSide) {
   return side === "white" ? "w" : "b";
-}
-
-function sideLabel(side: PlayerSide) {
-  return side === "white" ? "Белых" : "Черных";
-}
-
-function engineStatusLabel(status: EngineStatus) {
-  if (status === "loading") return "Загрузка";
-  if (status === "thinking") return "Думает";
-  if (status === "error") return "Ошибка";
-  return "Готов";
 }
 
 function isNoEngineMove(bestMove: string) {

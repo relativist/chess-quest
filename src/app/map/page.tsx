@@ -24,7 +24,12 @@ export default async function MapPage({ searchParams }: MapPageProps) {
   const mapData = await getQuestMapPageData(user.id, params.map);
   const { current, map, maps, next, previous } = mapData;
   const stageBackground = publicPath("/wall/stage1.png");
-  const coinIconSrc = publicPath("/wall/coin.png");
+  const chestIconSrc = publicPath("/wall/1/chest.png");
+  const coinIconSrc = publicPath("/wall/1/coin.png");
+  const mapIconSrc = publicPath("/wall/1/map.png");
+  const objectiveIconSrc = publicPath("/wall/1/objective.png");
+  const previousIconSrc = publicPath("/wall/1/back.png");
+  const nextIconSrc = publicPath("/wall/1/forward.png");
   const victoryIconSrc = publicPath("/wall/victory.png");
   const victoryLeafSrc = publicPath("/wall/victory_leaf2.png");
   const isMapCompleted = map.completedCards === map.cards.length;
@@ -41,23 +46,33 @@ export default async function MapPage({ searchParams }: MapPageProps) {
                 <span>Пройдено</span>
               </div>
             ) : null}
-            <h1>{map.title}</h1>
+            <h1 className="map-heading-title"><Image src={mapIconSrc} alt="" width={46} height={46} />{map.title}</h1>
             <p className="page-description">{map.description}</p>
             <nav className="map-switcher" aria-label="Переключение карт">
               {previous ? (
-                <Link className="map-switcher-button" href={previous.href} aria-label={`Предыдущая карта: ${previous.title}`}>{"<"}</Link>
+                <Link className="map-switcher-button" href={previous.href} aria-label={`Предыдущая карта: ${previous.title}`}>
+                  <Image src={previousIconSrc} alt="" width={26} height={26} />
+                </Link>
               ) : (
-                <span className="map-switcher-button disabled" aria-hidden="true">{"<"}</span>
+                <span className="map-switcher-button disabled" aria-hidden="true">
+                  <Image src={previousIconSrc} alt="" width={26} height={26} />
+                </span>
               )}
               <span>Карта {current.order} / {maps.length}</span>
               {next ? (
                 next.isUnlocked ? (
-                  <Link className="map-switcher-button" href={next.href} aria-label={`Следующая карта: ${next.title}`}>{">"}</Link>
+                  <Link className="map-switcher-button" href={next.href} aria-label={`Следующая карта: ${next.title}`}>
+                    <Image src={nextIconSrc} alt="" width={26} height={26} />
+                  </Link>
                 ) : (
-                  <span className="map-switcher-button disabled" title="Следующая карта закрыта" aria-hidden="true">{">"}</span>
+                  <span className="map-switcher-button disabled" title="Следующая карта закрыта" aria-hidden="true">
+                    <Image src={nextIconSrc} alt="" width={26} height={26} />
+                  </span>
                 )
               ) : (
-                <span className="map-switcher-button disabled" aria-hidden="true">{">"}</span>
+                <span className="map-switcher-button disabled" aria-hidden="true">
+                  <Image src={nextIconSrc} alt="" width={26} height={26} />
+                </span>
               )}
             </nav>
           </div>
@@ -98,10 +113,12 @@ export default async function MapPage({ searchParams }: MapPageProps) {
           <PreBattleCard
             alignEnd={index % 2 !== 0}
             card={card}
+            chestIconSrc={chestIconSrc}
             difficultyLabel={difficultyLabel(card.difficulty)}
             coinIconSrc={coinIconSrc}
             highlighted={card.slug === completedCardSlug}
             key={card.slug}
+            objectiveIconSrc={objectiveIconSrc}
             stars={"★".repeat(starsForDifficulty(card.difficulty))}
           />
         ))}

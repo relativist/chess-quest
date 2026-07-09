@@ -5,12 +5,14 @@ import {redirect} from "next/navigation";
 import {ensureDatabaseUser} from "@/lib/auth/database-user";
 import {getCurrentUser} from "@/lib/auth/session";
 import {getMagicUpgradeById} from "@/lib/quest/magic-upgrades";
-import {markCardVictory, type SpendGoldResult, spendUserGold} from "@/lib/quest/progress-store";
+import {grantUserGold, markCardVictory, type SpendGoldResult, spendUserGold} from "@/lib/quest/progress-store";
 import {getGameCardById} from "@/lib/quest/quest-data";
 
 export type SpendMagicGoldResult = SpendGoldResult & {
   error?: string;
 };
+
+const SECRET_GOLD_BONUS = 500;
 
 export async function completeCardAction(formData: FormData) {
   const user = await getCurrentUser();
@@ -49,6 +51,19 @@ export async function spendMagicGoldAction(formData: FormData): Promise<SpendMag
       error: "Не хватает монет для этой магии.",
     };
   }
+
+  return result;
+}
+
+export async function grantSecretGoldAction(): Promise<SpendMagicGoldResult> {
+  const user = await getCurrentUser();
+  if (!user) return { availableGold: 0, error: "Зарегистрируйтесь или войдите, чтобы добавить монеты.", ok: false };
+
+  await ensureDatabaseUser(user);
+  const result = await grantUserGold(user.id, SECRET_GOLD_BONUS);
+
+  revalidatePath("/", "layout");
+  revalidatePath("/map");
 
   return result;
 }

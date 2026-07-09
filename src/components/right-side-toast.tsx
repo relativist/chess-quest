@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import {useEffect, useState} from "react";
 
 type RightSideToastProps = {
+  iconAlt?: string;
+  iconSrc?: string;
   message: string;
   tone?: "error" | "success";
 };
 
-export function RightSideToast({ message, tone = "success" }: RightSideToastProps) {
+export function RightSideToast({ iconAlt = "", iconSrc, message, tone = "success" }: RightSideToastProps) {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
@@ -17,5 +20,10 @@ export function RightSideToast({ message, tone = "success" }: RightSideToastProp
 
   if (!isVisible) return null;
 
-  return <div className={`app-toast ${tone}`} role="status">{message}</div>;
+  return (
+    <div className={`app-toast ${tone}`} role="status">
+      {iconSrc ? <Image className="app-toast-icon" src={iconSrc} alt={iconAlt} width={44} height={44} /> : null}
+      <span>{message}</span>
+    </div>
+  );
 }

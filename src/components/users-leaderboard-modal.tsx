@@ -1,14 +1,16 @@
 "use client";
 
-import { useId, useRef } from "react";
-import type { LeaderboardUser } from "@/lib/quest/leaderboard";
+import Image from "next/image";
+import {useId, useRef} from "react";
+import type {LeaderboardUser} from "@/lib/quest/leaderboard";
 
 type UsersLeaderboardModalProps = {
   currentUserId?: string;
+  usersIconSrc: string;
   users: LeaderboardUser[];
 };
 
-export function UsersLeaderboardModal({ currentUserId, users }: UsersLeaderboardModalProps) {
+export function UsersLeaderboardModal({ currentUserId, users, usersIconSrc }: UsersLeaderboardModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -22,7 +24,10 @@ export function UsersLeaderboardModal({ currentUserId, users }: UsersLeaderboard
 
   return (
     <>
-      <button className="ghost-button" type="button" onClick={openDialog}>Пользователи</button>
+      <button className="ghost-button" type="button" onClick={openDialog}>
+        <Image className="nav-icon" src={usersIconSrc} alt="" width={24} height={24} />
+        Пользователи
+      </button>
       <dialog className="battle-dialog leaderboard-dialog" ref={dialogRef} aria-labelledby={titleId}>
         <div className="battle-dialog-header">
           <div>

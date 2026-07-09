@@ -259,6 +259,25 @@ export async function spendUserGold(userId: string, costGold: number): Promise<S
   return spendStoredUserGold(userId, cost);
 }
 
+export async function grantUserGold(userId: string, amountGold: number): Promise<SpendGoldResult> {
+  const amount = Math.max(0, Math.floor(amountGold));
+  if (amount === 0) {
+    return { availableGold: await getUserGold(userId), ok: true };
+  }
+
+  if (isDatabaseConfigured()) {
+    const user = await getPrisma().user.update({
+      where: { id: userId },
+      data: { gold: { increment: amount } },
+      select: { gold: true },
+    });
+
+    return { availableGold: user.gold, ok: true };
+  }
+
+  return { availableGold: await incrementStoredUserGold(userId, amount), ok: true };
+}
+
 async function readFileStore(): Promise<StoredProgress> {
   try {
     const content = await readFile(getProgressFile(), "utf8");

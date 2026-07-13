@@ -1,0 +1,264 @@
+.page {
+  min-height: calc(100vh - var(--app-header-height, 0px));
+  padding: clamp(20px, 4vw, 52px);
+}
+
+.panel {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  padding: clamp(20px, 4vw, 42px);
+  border: 2px solid rgba(91, 55, 24, 0.72);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 12% 4%, rgba(255, 255, 255, 0.75), transparent 32%),
+    linear-gradient(180deg, rgba(255, 250, 237, 0.98), rgba(246, 228, 190, 0.97));
+  box-shadow: 0 24px 70px rgba(35, 17, 8, 0.38);
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 30px);
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(98, 60, 26, 0.28);
+}
+
+.hero img {
+  width: clamp(76px, 12vw, 112px);
+  height: auto;
+  flex: 0 0 auto;
+}
+
+.hero h1,
+.sectionHeading h2,
+.challengesSection h2 {
+  margin: 0;
+  color: #3d2414;
+}
+
+.hero p:last-child {
+  max-width: 650px;
+  margin: 8px 0 0;
+  color: #725339;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.lobby {
+  display: grid;
+  gap: 22px;
+  padding-top: 24px;
+}
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid #9e392c;
+  border-radius: 14px;
+  color: #74251d;
+  background: #fff0ec;
+}
+
+.errorBanner span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.errorBanner button {
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.playersSection,
+.challengesSection {
+  display: grid;
+  gap: 14px;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.onlineCount {
+  display: grid;
+  min-width: 42px;
+  min-height: 42px;
+  place-items: center;
+  border-radius: 999px;
+  color: #fdf4df;
+  background: #406d3d;
+  font-weight: 900;
+}
+
+.playersList,
+.challengeList {
+  display: grid;
+  gap: 10px;
+}
+
+.playerRow,
+.challengeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(102, 64, 31, 0.28);
+  border-radius: 17px;
+  background: rgba(255, 253, 246, 0.78);
+}
+
+.playerIdentity {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 13px;
+}
+
+.playerIdentity h3 {
+  overflow: hidden;
+  margin: 0;
+  color: #402817;
+  text-overflow: ellipsis;
+}
+
+.playerIdentity p,
+.challengeRow span {
+  display: block;
+  margin: 3px 0 0;
+  color: #76563b;
+}
+
+.playerAvatar {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 2px solid #79502b;
+  border-radius: 50%;
+  color: #fff8e8;
+  background: linear-gradient(145deg, #91643c, #50311e);
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.emptyState {
+  margin: 0;
+  padding: 26px 18px;
+  border: 1px dashed rgba(102, 64, 31, 0.4);
+  border-radius: 17px;
+  color: #76563b;
+  background: rgba(255, 253, 246, 0.54);
+  text-align: center;
+}
+
+.challengeRow > div {
+  min-width: 0;
+}
+
+.challengeRow strong,
+.challengeRow span {
+  overflow-wrap: anywhere;
+}
+
+.footerActions {
+  justify-content: flex-start;
+}
+
+.challengeDialog {
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100dvh - 24px);
+  padding: 24px;
+  overflow: auto;
+  border: 2px solid #6f4726;
+  border-radius: 22px;
+  color: #3f2717;
+  background: #fff8e9;
+  box-shadow: 0 26px 80px rgba(27, 13, 6, 0.55);
+}
+
+.challengeDialog::backdrop {
+  background: rgba(20, 11, 6, 0.62);
+  backdrop-filter: blur(3px);
+}
+
+.challengeDialog h2 {
+  margin: 4px 0 12px;
+}
+
+.moreChallenges {
+  color: #76563b;
+  font-size: 0.9rem;
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.dialogActionButton {
+  display: inline-flex;
+  min-height: 76px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.dialogActionIcon {
+  display: block;
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 4px rgba(23, 32, 24, 0.2));
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 14px 10px 28px;
+  }
+
+  .panel {
+    padding: 18px 14px;
+    border-radius: 20px;
+  }
+
+  .hero {
+    align-items: flex-start;
+  }
+
+  .hero img {
+    width: 68px;
+  }
+
+  .playerRow,
+  .challengeRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .playerRow button,
+  .challengeRow button {
+    width: 100%;
+  }
+
+  .dialogActions {
+    flex-direction: column-reverse;
+  }
+
+  .dialogActions button {
+    width: 100%;
+  }
+}

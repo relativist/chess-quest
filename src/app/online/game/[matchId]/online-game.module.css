@@ -1,0 +1,544 @@
+.page {
+  min-height: calc(100vh - var(--app-header-height, 0px));
+  padding: clamp(12px, 2.5vw, 32px);
+}
+
+.game {
+  display: grid;
+  width: min(1280px, 100%);
+  margin: 0 auto;
+  gap: 16px;
+}
+
+.heading,
+.boardPanel,
+.sidePanel,
+.nativeDialog {
+  border: 1px solid rgba(236, 232, 211, 0.78);
+  background: rgba(255, 250, 237, 0.94);
+  box-shadow: 0 18px 48px rgba(23, 32, 24, 0.25);
+  backdrop-filter: blur(12px);
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 16px;
+}
+
+.heading h1,
+.sidePanel h2,
+.nativeDialog h2 {
+  margin: 0;
+  color: #3d2718;
+}
+
+.heading p {
+  margin: 4px 0 0;
+  color: #76563b;
+  font-weight: 700;
+}
+
+.connectionStatus {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  border-radius: 999px;
+  color: #31552f;
+  background: #e4f2df;
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.connectionStatus[data-error="true"] {
+  color: #7d291f;
+  background: #ffe4df;
+}
+
+.layout {
+  display: grid;
+  align-items: start;
+  grid-template-columns: minmax(420px, 1fr) minmax(290px, 380px);
+  gap: 16px;
+}
+
+.boardColumn {
+  display: grid;
+  gap: 10px;
+}
+
+.boardPanel {
+  padding: 12px;
+  border-radius: 14px;
+}
+
+.boardPanel :global(.board-controls) {
+  margin-bottom: 2px;
+}
+
+.playerCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 1px solid rgba(92, 57, 29, 0.28);
+  border-radius: 13px;
+  color: #472d1c;
+  background: rgba(255, 251, 239, 0.94);
+}
+
+.playerCard > div {
+  min-width: 0;
+}
+
+.playerCard[data-active="true"] {
+  border-color: #497342;
+  box-shadow: inset 0 0 0 2px rgba(73, 115, 66, 0.18);
+}
+
+.playerName {
+  overflow: hidden;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rating,
+.coins {
+  color: #76563b;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.playerCoinIcon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.clock {
+  min-width: 82px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  color: #fffaf0;
+  background: #443023;
+  font-variant-numeric: tabular-nums;
+  font-weight: 950;
+  text-align: center;
+}
+
+.sidePanel {
+  display: grid;
+  gap: 18px;
+  max-height: min(780px, calc(100vh - 190px));
+  padding: 18px;
+  border-radius: 14px;
+  overflow: auto;
+}
+
+.notice,
+.error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-weight: 750;
+}
+
+.notice {
+  color: #604629;
+  background: #f5e8c9;
+}
+
+.error {
+  color: #7d291f;
+  background: #ffe4df;
+}
+
+.magicSection,
+.actionSection,
+.historySection {
+  display: grid;
+  gap: 10px;
+}
+
+.magicHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.magicHeader h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.magicTitleIcon {
+  display: block;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+.magicBalance {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #76563b;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.magicBalance > img:first-child {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.coinIcon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.magicGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.magicButton,
+.retryButton,
+.primaryButton,
+.secondaryButton,
+.dangerButton,
+.onlineLink {
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid var(--action-button-border);
+  border-radius: 10px;
+  color: var(--action-button-color);
+  background: var(--action-button-background);
+  box-shadow: var(--action-button-shadow);
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.magicButton {
+  display: inline-flex;
+  min-height: 76px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px;
+}
+
+.magicPieceIcon {
+  display: block;
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 2px rgba(23, 32, 24, 0.24));
+}
+
+.magicPrice {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 6px;
+  border: 1px solid rgba(201, 139, 37, 0.48);
+  border-radius: 999px;
+  color: #765019;
+  background: rgba(255, 244, 205, 0.92);
+  font-size: 0.75rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.magicPrice .coinIcon {
+  width: 22px;
+  height: 22px;
+}
+
+.magicButton[aria-pressed="true"] {
+  border-color: #c98b25;
+  color: #4a2d1a;
+  background: #f1d08d;
+  box-shadow: inset 0 0 0 2px rgba(201, 139, 37, 0.4);
+}
+
+.magicButton:disabled,
+.retryButton:disabled,
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.dangerButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.history {
+  display: grid;
+  gap: 6px;
+  max-height: 260px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.history li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: rgba(246, 232, 202, 0.72);
+}
+
+.historyNumber {
+  color: #846344;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.emptyHistory {
+  margin: 0;
+  color: #76563b;
+}
+
+.actionGrid,
+.terminalActions,
+.dialogActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actionGrid > *,
+.terminalActions > *,
+.dialogActions > * {
+  flex: 1 1 140px;
+}
+
+.labeledDialogActions {
+  flex-direction: column;
+}
+
+.labeledDialogActions > * {
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.labeledDialogActions.twoColumnDialogActions {
+  flex-flow: row nowrap;
+  align-items: stretch;
+  justify-content: space-between;
+}
+
+.labeledDialogActions.twoColumnDialogActions > * {
+  width: calc(50% - 4px);
+  min-width: 0;
+  flex: 0 0 calc(50% - 4px);
+}
+
+.twoColumnDialogActions .labeledDialogAction {
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.iconActionButton {
+  position: relative;
+  display: inline-flex;
+  min-height: 86px;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+
+.labeledDialogAction {
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 8px 16px;
+  text-align: left;
+}
+
+.labeledDialogAction .actionIcon {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+}
+
+.actionIcon {
+  display: block;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 4px rgba(23, 32, 24, 0.2));
+}
+
+.actionCount {
+  position: absolute;
+  right: 8px;
+  bottom: 7px;
+  display: inline-flex;
+  min-width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border: 1px solid rgba(119, 80, 45, 0.58);
+  border-radius: 999px;
+  color: #fffaf0;
+  background: #443023;
+  font-size: 0.78rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.actionHint {
+  margin: 0;
+  color: #76563b;
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.dangerButton {
+  border-color: #8b392e;
+  color: #fffaf0;
+  background: #a64739;
+}
+
+.onlineLink {
+  text-decoration: none;
+}
+
+.onlineLink.iconActionButton {
+  padding: 6px;
+}
+
+.magicButton:focus-visible,
+.retryButton:focus-visible,
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.dangerButton:focus-visible,
+.onlineLink:focus-visible {
+  outline: 3px solid #e7a93e;
+  outline-offset: 2px;
+}
+
+.nativeDialog {
+  width: min(470px, calc(100% - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: clamp(20px, 5vw, 28px);
+  border-radius: 20px;
+  color: #3d2718;
+  overflow: auto;
+  text-align: center;
+}
+
+.nativeDialog::backdrop {
+  background: rgba(20, 11, 6, 0.68);
+  backdrop-filter: blur(2px);
+}
+
+.nativeDialog p {
+  margin: 12px 0 22px;
+  color: #67492f;
+  font-weight: 700;
+}
+
+.resultArtwork {
+  display: flex;
+  justify-content: center;
+  margin: 10px auto 4px;
+}
+
+.resultArtwork img {
+  display: block;
+  width: min(260px, 100%);
+  height: auto;
+  max-height: 32dvh;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 18px rgba(23, 32, 24, 0.22));
+}
+
+@media (max-width: 850px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidePanel {
+    max-height: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .page {
+    padding: 8px;
+  }
+
+  .heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .boardPanel {
+    padding: 7px;
+  }
+
+  .boardPanel :global(.board-frame) {
+    grid-template-columns: 15px minmax(0, 1fr) 15px;
+    grid-template-rows: 15px minmax(0, 1fr) 15px;
+  }
+
+  .boardPanel :global(.board-file-labels),
+  .boardPanel :global(.board-rank-labels) {
+    font-size: 9px;
+  }
+
+  .playerCard {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .rating {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .clock {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .dialogActions,
+  .actionGrid,
+  .terminalActions {
+    flex-direction: column;
+  }
+
+  .dialogActions > *,
+  .actionGrid > *,
+  .terminalActions > * {
+    flex-basis: auto;
+    width: 100%;
+  }
+}

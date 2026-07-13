@@ -3,6 +3,7 @@
 import Image from "next/image";
 import {useId, useRef} from "react";
 import type {LeaderboardUser} from "@/lib/quest/leaderboard";
+import {publicPath} from "@/lib/routing/public-path";
 
 type UsersLeaderboardModalProps = {
   currentUserId?: string;
@@ -34,7 +35,6 @@ export function UsersLeaderboardModal({ currentUserId, users, usersIconSrc }: Us
             <p className="eyebrow">Рейтинг</p>
             <h2 id={titleId}>Пользователи</h2>
           </div>
-          <button className="dialog-close" type="button" aria-label="Закрыть" onClick={closeDialog}>×</button>
         </div>
 
         {users.length > 0 ? (
@@ -76,7 +76,10 @@ export function UsersLeaderboardModal({ currentUserId, users, usersIconSrc }: Us
         )}
 
         <div className="dialog-actions">
-          <button className="ghost-button" type="button" onClick={closeDialog}>Закрыть</button>
+          <button className="ghost-button leaderboard-back-button" type="button" onClick={closeDialog}>
+            <Image src={publicPath("/assets/images/icons/back.png")} alt="" width={42} height={42} />
+            <span>Назад</span>
+          </button>
         </div>
       </dialog>
     </>

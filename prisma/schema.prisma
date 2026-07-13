@@ -33,6 +33,47 @@ enum VictoryReason {
   CARD_OBJECTIVE
 }
 
+enum OnlineChallengeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELED
+  EXPIRED
+}
+
+enum OnlineMatchStatus {
+  ACTIVE
+  FINISHED
+}
+
+enum OnlineMatchResult {
+  WHITE_WIN
+  BLACK_WIN
+  DRAW
+}
+
+enum OnlineMatchFinishReason {
+  CHECKMATE
+  TIMEOUT
+  SURRENDER
+  DRAW_AGREEMENT
+  STALEMATE
+  INSUFFICIENT_MATERIAL
+  THREEFOLD_REPETITION
+  FIFTY_MOVE_RULE
+}
+
+enum OnlineMatchEventType {
+  MOVE
+  MAGIC
+  DRAW_OFFERED
+  DRAW_DECLINED
+  DRAW_ACCEPTED
+  SURRENDERED
+  TIMED_OUT
+  MATCH_FINISHED
+}
+
 model User {
   id           String   @id @default(cuid())
   login        String   @unique
@@ -41,16 +82,27 @@ model User {
   displayName  String
   role         UserRole @default(PLAYER)
   victoryScore Int      @default(0)
+  onlineRating Int      @default(0)
   gold         Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  boardTemplates BoardTemplate[]
-  maps           QuestMap[]
-  progress       CardProgress[]
-  gameSessions   GameSession[]
+  boardTemplates           BoardTemplate[]
+  maps                     QuestMap[]
+  progress                 CardProgress[]
+  gameSessions             GameSession[]
+  authSessions             AuthSession[]
+  onlinePlayerState        OnlinePlayerState?
+  sentOnlineChallenges     OnlineChallenge[]    @relation("OnlineChallengeChallenger")
+  receivedOnlineChallenges OnlineChallenge[]    @relation("OnlineChallengeChallenged")
+  whiteOnlineMatches       OnlineMatch[]        @relation("OnlineMatchWhitePlayer")
+  blackOnlineMatches       OnlineMatch[]        @relation("OnlineMatchBlackPlayer")
+  pendingDrawOffers        OnlineMatch[]        @relation("OnlineMatchPendingDrawOffer")
+  onlineMatchEvents        OnlineMatchEvent[]
+  onlineRatingChanges      OnlineRatingChange[]
 
   @@index([victoryScore])
+  @@index([onlineRating])
 }
 
 model BoardTemplate {
@@ -91,19 +143,19 @@ model QuestMap {
 }
 
 model QuestCard {
-  id                   String   @id @default(cuid())
-  slug                 String   @unique
-  order                Int
-  title                String
-  text                 String   @db.Text
-  congratulationsText  String   @default("") @db.Text
-  objective            Json?
-  startingFen          String?  @db.Text
-  difficulty           Int      @db.SmallInt
-  rewardGold           Int
-  rewardScore          Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  slug                String   @unique
+  order               Int
+  title               String
+  text                String   @db.Text
+  congratulationsText String   @default("") @db.Text
+  objective           Json?
+  startingFen         String?  @db.Text
+  difficulty          Int      @db.SmallInt
+  rewardGold          Int
+  rewardScore         Int
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   mapId String
   map   QuestMap @relation(fields: [mapId], references: [id], onDelete: Cascade)
@@ -132,7 +184,7 @@ model CardProgress {
   updatedAt        DateTime  @updatedAt
 
   userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   cardId String
   card   QuestCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
@@ -143,22 +195,22 @@ model CardProgress {
 }
 
 model GameSession {
-  id               String        @id @default(cuid())
-  startingFen      String?       @db.Text
+  id               String         @id @default(cuid())
+  startingFen      String?        @db.Text
   playerColor      PlayerColor?
-  engineDifficulty Int           @db.SmallInt
-  outcome          GameOutcome   @default(IN_PROGRESS)
+  engineDifficulty Int            @db.SmallInt
+  outcome          GameOutcome    @default(IN_PROGRESS)
   victoryReason    VictoryReason?
-  rewardScore      Int           @default(0)
-  rewardGold       Int           @default(0)
+  rewardScore      Int            @default(0)
+  rewardGold       Int            @default(0)
   moveHistory      Json?
-  errorMessage     String?       @db.Text
-  startedAt        DateTime      @default(now())
+  errorMessage     String?        @db.Text
+  startedAt        DateTime       @default(now())
   finishedAt       DateTime?
-  updatedAt        DateTime      @updatedAt
+  updatedAt        DateTime       @updatedAt
 
   userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   cardId String
   card   QuestCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
@@ -169,4 +221,135 @@ model GameSession {
   @@index([userId, startedAt])
   @@index([cardId])
   @@index([outcome])
+}
+
+model AuthSession {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model OnlinePlayerState {
+  userId        String   @id
+  lastSeenAt    DateTime @default(now())
+  activeMatchId String?
+  updatedAt     DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeMatch OnlineMatch? @relation(fields: [activeMatchId], references: [id], onDelete: SetNull)
+
+  @@index([lastSeenAt])
+  @@index([activeMatchId])
+}
+
+model OnlineChallenge {
+  id          String                @id @default(cuid())
+  status      OnlineChallengeStatus @default(PENDING)
+  activeKey   String?               @unique
+  expiresAt   DateTime
+  respondedAt DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  challengerId String
+  challenger   User   @relation("OnlineChallengeChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
+
+  challengedId String
+  challenged   User   @relation("OnlineChallengeChallenged", fields: [challengedId], references: [id], onDelete: Cascade)
+
+  match OnlineMatch?
+
+  rematchOfMatchId String?
+  rematchOfMatch   OnlineMatch? @relation("OnlineMatchRematchChallenges", fields: [rematchOfMatchId], references: [id], onDelete: SetNull)
+
+  @@index([challengerId, status])
+  @@index([challengedId, status])
+  @@index([status, expiresAt])
+  @@index([rematchOfMatchId, status])
+}
+
+model OnlineMatch {
+  id                   String                   @id @default(cuid())
+  status               OnlineMatchStatus        @default(ACTIVE)
+  result               OnlineMatchResult?
+  finishReason         OnlineMatchFinishReason?
+  fen                  String                   @db.Text
+  moveHistory          Json?
+  version              Int                      @default(0)
+  whiteTimeMs          Int                      @default(600000)
+  blackTimeMs          Int                      @default(600000)
+  turnStartedAt        DateTime                 @default(now())
+  whiteMagicCoins      Int                      @default(500)
+  blackMagicCoins      Int                      @default(500)
+  whiteDrawOfferCount  Int                      @default(0)
+  blackDrawOfferCount  Int                      @default(0)
+  pendingDrawOfferById String?
+  ratingAppliedAt      DateTime?
+  startedAt            DateTime                 @default(now())
+  finishedAt           DateTime?
+  updatedAt            DateTime                 @updatedAt
+
+  challengeId String          @unique
+  challenge   OnlineChallenge @relation(fields: [challengeId], references: [id], onDelete: Restrict)
+
+  whitePlayerId String
+  whitePlayer   User   @relation("OnlineMatchWhitePlayer", fields: [whitePlayerId], references: [id], onDelete: Restrict)
+
+  blackPlayerId String
+  blackPlayer   User   @relation("OnlineMatchBlackPlayer", fields: [blackPlayerId], references: [id], onDelete: Restrict)
+
+  pendingDrawOfferBy User? @relation("OnlineMatchPendingDrawOffer", fields: [pendingDrawOfferById], references: [id], onDelete: SetNull)
+
+  playerStates      OnlinePlayerState[]
+  events            OnlineMatchEvent[]
+  ratingChanges     OnlineRatingChange[]
+  rematchChallenges OnlineChallenge[]    @relation("OnlineMatchRematchChallenges")
+
+  @@index([whitePlayerId, status])
+  @@index([blackPlayerId, status])
+  @@index([status, updatedAt])
+  @@index([pendingDrawOfferById])
+}
+
+model OnlineMatchEvent {
+  id              String               @id @default(cuid())
+  sequence        Int
+  type            OnlineMatchEventType
+  payload         Json?
+  clientRequestId String?              @unique
+  createdAt       DateTime             @default(now())
+
+  matchId String
+  match   OnlineMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  actorId String?
+  actor   User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@unique([matchId, sequence])
+  @@index([matchId, createdAt])
+  @@index([actorId])
+}
+
+model OnlineRatingChange {
+  id          String   @id @default(cuid())
+  delta       Int
+  ratingAfter Int
+  createdAt   DateTime @default(now())
+
+  matchId String
+  match   OnlineMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([matchId, userId])
+  @@index([userId, createdAt])
 }

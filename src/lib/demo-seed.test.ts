@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { demoMapSeed, demoMapSeeds, getCardStartingFen, validateDemoSeedData } from "./demo-seed";
-import { STARTING_FEN, validateBoardTemplateFen } from "./chess/fen-validation";
+import { validateBoardTemplateFen } from "./chess/fen-validation";
 
 describe("demoMapSeed", () => {
   it("keeps the first published map with five ordered cards", () => {
@@ -10,21 +10,21 @@ describe("demoMapSeed", () => {
     expect(demoMapSeed.cards.map((card) => card.order)).toEqual([1, 2, 3, 4, 5]);
   });
 
-  it("defines four built-in published maps before custom maps", () => {
-    expect(demoMapSeeds).toHaveLength(4);
-    expect(demoMapSeeds.map((map) => map.order)).toEqual([1, 2, 3, 4]);
+  it("defines the exported campaign maps in their published order", () => {
+    expect(demoMapSeeds).toHaveLength(5);
+    expect(demoMapSeeds.map((map) => map.order)).toEqual([1, 2, 3, 4, 5]);
     expect(demoMapSeeds.every((map) => map.isPublished)).toBe(true);
-    expect(demoMapSeeds.every((map) => map.cards.length === 5)).toBe(true);
+    expect(demoMapSeeds.map((map) => map.cards.length)).toEqual([5, 5, 5, 5, 6]);
   });
 
   it("contains configured difficulty and reward values for the first map", () => {
-    expect(demoMapSeed.cards.map((card) => card.difficulty)).toEqual([0, 2, 4, 6, 8]);
-    expect(demoMapSeed.cards.map((card) => card.rewardGold)).toEqual([100, 300, 500, 700, 900]);
-    expect(demoMapSeed.cards.map((card) => card.rewardScore)).toEqual([100, 300, 500, 700, 900]);
+    expect(demoMapSeed.cards.map((card) => card.difficulty)).toEqual([0, 3, 4, 6, 8]);
+    expect(demoMapSeed.cards.map((card) => card.rewardGold)).toEqual([100, 300, 400, 600, 900]);
+    expect(demoMapSeed.cards.map((card) => card.rewardScore)).toEqual([100, 300, 400, 600, 900]);
   });
 
-  it("uses the standard FEN for cards without a template", () => {
-    expect(getCardStartingFen(demoMapSeed.cards[0])).toBe(STARTING_FEN);
+  it("uses the exported FEN stored on each campaign card", () => {
+    expect(getCardStartingFen(demoMapSeed.cards[0])).toBe(demoMapSeed.cards[0].startingFen);
   });
 
   it("does not mention obsolete color selection in card copy", () => {

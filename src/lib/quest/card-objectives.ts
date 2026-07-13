@@ -11,6 +11,7 @@ export type CardObjective =
 
 export type ObjectiveResult = {
   completed: boolean;
+  failed: boolean;
   label: string;
 };
 
@@ -74,7 +75,13 @@ export function objectiveShortLabel(objective: CardObjective) {
   }
 }
 
-export function objectiveProgressLabel(objective: CardObjective, completedHalfMoves: number, capturedPieces = 0, givenChecks = 0) {
+export function objectiveProgressLabel(
+  objective: CardObjective,
+  completedHalfMoves: number,
+  capturedPieces = 0,
+  givenChecks = 0,
+  completedPlayerMoves = Math.ceil(completedHalfMoves / 2),
+) {
   switch (objective.type) {
     case "capture_piece":
       return "Цель: съесть " + pieceLabel(objective.piece);
@@ -85,8 +92,7 @@ export function objectiveProgressLabel(objective: CardObjective, completedHalfMo
     case "checkmate":
       return "Цель: поставить мат";
     case "checkmate_in_moves": {
-      const current = Math.min(Math.ceil(completedHalfMoves / 2), objective.moves);
-      return current + " / " + objective.moves + " ходов до мата";
+      return completedPlayerMoves + " / " + objective.moves + " ходов использовано";
     }
     case "give_check":
       return "Цель: поставить шах";
@@ -103,50 +109,65 @@ export function objectiveProgressLabel(objective: CardObjective, completedHalfMo
 
 export function evaluateCardObjective(objective: CardObjective, input: ObjectiveEvaluationInput): ObjectiveResult {
   if (input.isCheckmate && objective.type !== "checkmate_in_moves") {
-    return { completed: true, label: "Мат. Цель карточки выполнена." };
+    return completedObjective("Мат. Цель карточки выполнена.");
   }
 
   switch (objective.type) {
     case "capture_piece":
       if (capturedPieceMatches(objective.piece, input.capturedPiece)) {
-        return { completed: true, label: "Целевая фигура съедена: " + pieceLabel(objective.piece) + "." };
+        return completedObjective("Целевая фигура съедена: " + pieceLabel(objective.piece) + ".");
       }
-      return { completed: false, label: objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0) };
+      return activeObjective(objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0));
     case "capture_pieces": {
       const capturedPieces = input.capturedPieces ?? 0;
       if (capturedPieces >= objective.pieces) {
-        return { completed: true, label: "Съедено фигур противника: " + objective.pieces + "." };
+        return completedObjective("Съедено фигур противника: " + objective.pieces + ".");
       }
-      return { completed: false, label: objectiveProgressLabel(objective, input.completedHalfMoves, capturedPieces) };
+      return activeObjective(objectiveProgressLabel(objective, input.completedHalfMoves, capturedPieces));
     }
     case "checkmate":
-      return { completed: false, label: objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0) };
+      return activeObjective(objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0));
     case "checkmate_in_moves": {
       const completedPlayerMoves = input.completedPlayerMoves ?? Math.ceil(input.completedHalfMoves / 2);
       if (input.isCheckmate && completedPlayerMoves <= objective.moves) {
-        return { completed: true, label: "Мат за " + moveCountLabel(completedPlayerMoves) + ". Цель карточки выполнена." };
+        return completedObjective("Мат за " + moveCountLabel(completedPlayerMoves) + ". Цель карточки выполнена.");
       }
-      if (input.isCheckmate) {
-        return { completed: false, label: "Мат поставлен позже лимита " + moveCountLabel(objective.moves) + "." };
+      if (completedPlayerMoves >= objective.moves) {
+        const reason = completedPlayerMoves > objective.moves
+          ? "Лимит " + moveCountLabel(objective.moves) + " превышен."
+          : "Лимит " + moveCountLabel(objective.moves) + " исчерпан. Мат не поставлен.";
+        return failedObjective(reason);
       }
-      return { completed: false, label: objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0) };
+      return activeObjective(objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0, input.givenChecks ?? 0, completedPlayerMoves));
     }
     case "give_check":
-      if (input.isCheck) return { completed: true, label: "Шах поставлен. Цель карточки выполнена." };
-      return { completed: false, label: objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0) };
+      if (input.isCheck) return completedObjective("Шах поставлен. Цель карточки выполнена.");
+      return activeObjective(objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0));
     case "give_checks": {
       const givenChecks = input.givenChecks ?? 0;
       if (givenChecks >= objective.checks) {
-        return { completed: true, label: "Поставлено шахов королю: " + objective.checks + "." };
+        return completedObjective("Поставлено шахов королю: " + objective.checks + ".");
       }
-      return { completed: false, label: objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0, givenChecks) };
+      return activeObjective(objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0, givenChecks));
     }
     case "survive_half_moves":
       if (input.completedHalfMoves >= objective.halfMoves) {
-        return { completed: true, label: "Вы продержались " + objective.halfMoves + " полуходов." };
+        return completedObjective("Вы продержались " + objective.halfMoves + " полуходов.");
       }
-      return { completed: false, label: objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0) };
+      return activeObjective(objectiveProgressLabel(objective, input.completedHalfMoves, input.capturedPieces ?? 0));
   }
+}
+
+function activeObjective(label: string): ObjectiveResult {
+  return { completed: false, failed: false, label };
+}
+
+function completedObjective(label: string): ObjectiveResult {
+  return { completed: true, failed: false, label };
+}
+
+function failedObjective(label: string): ObjectiveResult {
+  return { completed: false, failed: true, label };
 }
 
 export function normalizeCardObjective(value: unknown, fallback: CardObjective = { type: "checkmate" }): CardObjective {
@@ -193,8 +214,12 @@ function fallbackObjective(difficulty: DemoQuestCardSeed["difficulty"]): CardObj
 }
 
 function moveCountLabel(moves: number) {
-  if (moves === 1) return "1 ход";
-  return moves + " хода";
+  const lastTwoDigits = moves % 100;
+  const lastDigit = moves % 10;
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return moves + " ходов";
+  if (lastDigit === 1) return moves + " ход";
+  if (lastDigit >= 2 && lastDigit <= 4) return moves + " хода";
+  return moves + " ходов";
 }
 
 function checkCountLabel(checks: number) {

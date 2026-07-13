@@ -18,9 +18,9 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
   const params = await searchParams;
   const mode = params.mode === "register" ? "register" : "login";
   const error = params.error ? decodeURIComponent(params.error) : "";
-  const authBackground = publicPath("/wall/game_wall.png");
-  const battleIconSrc = publicPath("/wall/1/battle.png");
-  const logoSrc = publicPath("/wall/1/logo.png");
+  const authBackground = publicPath("/assets/images/backgrounds/game-wall.png");
+  const battleIconSrc = publicPath("/assets/images/icons/battle.png");
+  const logoSrc = publicPath("/assets/images/branding/logo.png");
 
   return (
     <section className="auth-shell auth-background-page" style={{ "--auth-background": `url(${authBackground})` } as CSSProperties}>
@@ -80,7 +80,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
           )}
 
           <div className="demo-logins">
-            <span>После входа откроется карта похода.</span>
+            <span>После входа выберите кампанию, одиночную или онлайн-игру.</span>
           </div>
         </div>
       </div>

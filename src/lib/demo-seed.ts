@@ -36,448 +36,527 @@ export type DemoQuestMapSeed = {
   cards: DemoQuestCardSeed[];
 };
 
-export const demoMapSeed: DemoQuestMapSeed = {
-  slug: "demo-road-to-tower",
-  title: "Начало пути в мир Chess Quest",
-  description: "Победи бомбических гоблинов и забери награду.",
-  order: 1,
-  isPublished: true,
-  boardTemplates: [
-    {
-      slug: "knight-fork-template",
-      name: "Тактика коня",
-      description: "Ранняя позиция с активным слоном и конем, где легко увидеть тактический мотив.",
-      fen: "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 2 3",
-    },
-    {
-      slug: "rook-file-template",
-      name: "Ладейная атака",
-      description: "Упрощенная позиция для игры по открытым линиям без перегруза фигурами.",
-      fen: "4k3/8/8/8/8/8/R7/4K3 w - - 0 1",
-    },
-    {
-      slug: "queen-pressure-template",
-      name: "Сложная середина",
-      description: "Ферзь черных активен, белым нужно аккуратно найти план защиты и контригры.",
-      fen: "4k3/8/8/8/8/3q4/8/4K3 w - - 0 1",
-    },
-    {
-      slug: "grandmaster-peak-template",
-      name: "Гроссмейстерский рубеж",
-      description: "Плотная миттельшпильная позиция с рокировками и несколькими планами за обе стороны.",
-      fen: "r3k2r/ppp2ppp/2n1bn2/3qp3/3P4/2N1PN2/PPP2PPP/R2QKB1R w KQkq - 0 1",
-    },
-  ],
-  cards: [
-    {
-      slug: "opening-gate",
-      order: 1,
-      title: "Начало пути",
-      text: "Первый гоблин нагло смотрит тебе в глаза!",
-      congratulationsText: "Ты стойко держался и победил. Победа засчитана.",
-      objective: { type: "checkmate" },
-      difficulty: 0,
-      rewardGold: 100,
-      rewardScore: 100,
-      completed: true,
-      boardTemplateSlug: null,
-      templateName: "Стандартная расстановка",
-    },
-    {
-      slug: "knight-fork",
-      order: 2,
-      title: "Гоблины на коне. Конная развилка",
-      text: "Позиция с открытыми линиями и шансом на тактический удар.",
-      congratulationsText: "Развилка сработала. Противник повержен, награда твоя.",
-      objective: { type: "give_check" },
-      difficulty: 2,
-      rewardGold: 300,
-      rewardScore: 300,
-      completed: false,
-      boardTemplateSlug: "knight-fork-template",
-      templateName: "Тактика коня",
-    },
-    {
-      slug: "rook-file",
-      order: 3,
-      title: "Гоблины на ладье. Открытая вертикаль",
-      text: "Ладьи уже готовы к атаке. Найди план и не отдай инициативу.",
-      congratulationsText: "Вертикаль под контролем. Можно забирать награды.",
-      objective: { type: "checkmate" },
-      difficulty: 4,
-      rewardGold: 500,
-      rewardScore: 500,
-      completed: false,
-      boardTemplateSlug: "rook-file-template",
-      templateName: "Ладейная атака",
-    },
-    {
-      slug: "queen-pressure",
-      order: 4,
-      title: "Гоблины на ферзе. Давление ферзя",
-      text: "Ферзь соперника активен. Нужно пережить угрозы и перехватить темп.",
-      congratulationsText: "Давление выдержано. Победа засчитана.",
-      objective: { type: "checkmate" },
-      difficulty: 6,
-      rewardGold: 700,
-      rewardScore: 700,
-      completed: false,
-      boardTemplateSlug: "queen-pressure-template",
-      templateName: "Сложная середина",
-    },
-    {
-      slug: "grandmaster-peak",
-      order: 5,
-      title: "Гоблины на короле. Вершина карты",
-      text: "Финальная демо-битва на максимальной сложности карты.",
-      congratulationsText: "Вершина взята. Отличная победа в финальной битве карты.",
-      objective: { type: "checkmate" },
-      difficulty: 8,
-      rewardGold: 900,
-      rewardScore: 900,
-      completed: false,
-      boardTemplateSlug: "grandmaster-peak-template",
-      templateName: "Гроссмейстерский рубеж",
-    },
-  ],
-};
-
 export const demoMapSeeds: DemoQuestMapSeed[] = [
-  demoMapSeed,
   {
-    slug: "forest-tactics-trail",
-    title: "Лес тактических ловушек",
-    description: "Короткая карта про вилки, связки и аккуратное развитие фигур.",
-    order: 2,
-    isPublished: true,
-    boardTemplates: [
+    "slug": "demo-road-to-tower",
+    "title": "1. Белая Роща под осадой",
+    "description": "Гоблины захватили Белую Рощу — светлый лесной рубеж между землями рыцарей и болотными владениями врага.\nИх отряды перекрыли мосты, разграбили обозы и построили чёрный форпост у старой башни.\n\nРыцарям нужно вернуть контроль над дорогой: отбить разведчиков, уничтожить обоз, выдержать осаду, применить магию в отчаянной ситуации и в конце сокрушить вождя гоблинов.",
+    "order": 1,
+    "isPublished": true,
+    "boardTemplates": [],
+    "cards": [
       {
-        slug: "forest-bishop-pin-template",
-        name: "Лесная связка",
-        description: "Белым нужно сыграть спокойно: фигуры активны, но одна ошибка отдаст темп.",
-        fen: "4k3/8/8/8/4r3/8/4B3/4K3 w - - 0 1",
+        "slug": "opening-gate",
+        "order": 1,
+        "title": "Крик у Каменного брода",
+        "text": "Передовой отряд гоблинов перешёл брод, но ещё не успел построить защиту. Рыцарский разведчик заметил слабое место в строю. Нужно быстро атаковать и заставить вражеского короля отступить.",
+        "congratulationsText": "Гоблины у брода дрогнули! Дорога в Белую Рощу открыта.",
+        "startingFen": "rnbqkbnr/pp3ppp/8/3pp3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 0 4",
+        "difficulty": 0,
+        "rewardGold": 100,
+        "rewardScore": 100,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "capture_pieces",
+          "pieces": 7
+        }
       },
       {
-        slug: "forest-knight-outpost-template",
-        name: "Конный форпост",
-        description: "Два коня в центре, цель — найти первый шах и не потерять фигуру.",
-        fen: "4k3/8/8/3n4/8/2N5/8/4K3 w - - 0 1",
+        "slug": "knight-fork",
+        "order": 2,
+        "title": "Пылающий обоз",
+        "text": "Гоблины везут к форпосту ящики с копьями, стрелами и чёрным порохом. Их охрана растянулась по дороге. Рыцари должны ударить по обозу и уничтожить как можно больше врагов до подхода подкрепления.",
+        "congratulationsText": "Обоз разбит! Гоблины остались без припасов и оружия.",
+        "startingFen": "4k3/ppp2ppp/2n2n2/3p4/3P4/2N1B3/PPP2PPP/4K2R w K - 0 10",
+        "difficulty": 3,
+        "rewardGold": 300,
+        "rewardScore": 300,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "capture_pieces",
+          "pieces": 6
+        }
       },
       {
-        slug: "forest-pawn-race-template",
-        name: "Пешечная тропа",
-        description: "Мини-эндшпиль, где важен каждый темп.",
-        fen: "4k3/6p1/8/8/8/8/1P6/4K3 w - - 0 1",
+        "slug": "rook-file",
+        "order": 3,
+        "title": "Осада старой башни",
+        "text": "Ночью гоблины окружили старую башню. Их барабаны гремят в темноте, а стрелы летят через стены. Победить сразу невозможно — нужно удержать позицию до рассвета и не дать врагу прорваться к королю.",
+        "congratulationsText": "Башня устояла! С рассветом гоблины отступили от стен.",
+        "startingFen": "2kr3r/ppp2ppp/2n1bn2/3p4/3P4/2P1PN2/PB1N1PPP/R3K2R w KQ - 0 14",
+        "difficulty": 4,
+        "rewardGold": 400,
+        "rewardScore": 400,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "survive_half_moves",
+          "halfMoves": 30
+        }
       },
       {
-        slug: "forest-queen-trap-template",
-        name: "Ловушка ферзя",
-        description: "Ферзь соперника активен, но ладья может перехватить инициативу.",
-        fen: "4k3/8/8/8/3q4/8/4R3/4K3 w - - 0 1",
+        "slug": "queen-pressure",
+        "order": 4,
+        "title": "Последняя искра магии",
+        "text": "Отряд почти разбит. Чёрная королева гоблинов пробралась к самому лагерю рыцарей. Обычными силами позицию почти не спасти, но у рыцарей осталась последняя магическая печать. Если превратить слабую пешку в сильную фигуру, можно пережить удар и продолжить бой.",
+        "congratulationsText": "Магическая печать вспыхнула! Рыцари выстояли там, где всё казалось потерянным.",
+        "startingFen": "6k1/5ppp/8/8/8/6q1/6PP/6K1 w - - 0 1",
+        "difficulty": 6,
+        "rewardGold": 600,
+        "rewardScore": 600,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "checkmate"
+        }
       },
       {
-        slug: "forest-final-file-template",
-        name: "Последняя вертикаль леса",
-        description: "Ладья и король учат держать открытую линию.",
-        fen: "4k3/8/8/8/8/8/R7/4K3 w - - 0 1",
-      },
-    ],
-    cards: [
-      {
-        slug: "forest-first-snare",
-        order: 1,
-        title: "Первая лесная ловушка",
-        text: "Сделай первые ходы точно и переживи стартовую атаку.",
-        congratulationsText: "Ловушка обезврежена. Можно идти глубже в лес.",
-        objective: { type: "checkmate" },
-        difficulty: 1,
-        rewardGold: 160,
-        rewardScore: 160,
-        completed: false,
-        boardTemplateSlug: null,
-        templateName: "Стандартная расстановка",
-      },
-      {
-        slug: "forest-bishop-pin",
-        order: 2,
-        title: "Связка на просеке",
-        text: "Слон держит линию. Найди способ использовать связку.",
-        congratulationsText: "Связка сработала, позиция удержана.",
-        objective: { type: "checkmate" },
-        difficulty: 2,
-        rewardGold: 260,
-        rewardScore: 260,
-        completed: false,
-        boardTemplateSlug: "forest-bishop-pin-template",
-        templateName: "Лесная связка",
-      },
-      {
-        slug: "forest-knight-outpost",
-        order: 3,
-        title: "Конь на форпосте",
-        text: "Конь в центре диктует игру. Покажи первый шах.",
-        congratulationsText: "Форпост закреплен, соперник отступает.",
-        objective: { type: "checkmate" },
-        difficulty: 3,
-        rewardGold: 360,
-        rewardScore: 360,
-        completed: false,
-        boardTemplateSlug: "forest-knight-outpost-template",
-        templateName: "Конный форпост",
-      },
-      {
-        slug: "forest-queen-trap",
-        order: 4,
-        title: "Ферзь в чаще",
-        text: "Не гоняйся за ферзем вслепую: сначала переживи угрозы.",
-        congratulationsText: "Угрозы погашены, темп за тобой.",
-        objective: { type: "checkmate" },
-        difficulty: 4,
-        rewardGold: 460,
-        rewardScore: 460,
-        completed: false,
-        boardTemplateSlug: "forest-queen-trap-template",
-        templateName: "Ловушка ферзя",
-      },
-      {
-        slug: "forest-final-file",
-        order: 5,
-        title: "Вертикаль у старого дуба",
-        text: "Финал карты: ладья должна довести атаку до мата.",
-        congratulationsText: "Лесная карта пройдена, награда твоя.",
-        objective: { type: "checkmate" },
-        difficulty: 5,
-        rewardGold: 560,
-        rewardScore: 560,
-        completed: false,
-        boardTemplateSlug: "forest-final-file-template",
-        templateName: "Последняя вертикаль леса",
-      },
-    ],
+        "slug": "grandmaster-peak",
+        "order": 5,
+        "title": "Вождь Чёрного форпоста",
+        "text": "Рыцари ворвались в Чёрный форпост. Вождь гоблинов спрятался за последней стеной из щитов, но его охрана стоит слишком тесно. Один точный удар может закончить всю битву за Белую Рощу.",
+        "congratulationsText": "Вождь форпоста повержен! Белая Роща снова принадлежит рыцарям.",
+        "startingFen": "6k1/5ppp/8/2B2B2/2P5/3pP3/2Q5/4NRK1 w - - 0 1",
+        "difficulty": 8,
+        "rewardGold": 900,
+        "rewardScore": 900,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "checkmate_in_moves",
+          "moves": 3
+        }
+      }
+    ]
   },
   {
-    slug: "desert-endgame-road",
-    title: "Песчаная дорога эндшпилей",
-    description: "Карта про пешечные гонки, выживание и точные эндшпильные решения.",
-    order: 3,
-    isPublished: true,
-    boardTemplates: [
+    "slug": "forest-tactics-trail",
+    "title": "2. Ржавый перевал Громовой мельницы",
+    "description": "За Белой Рощей начинается Ржавый перевал — узкая дорога между скалами, где стоит старая мельница. Гоблины захватили перевал и поставили там осадные машины.\n\nРыцари попали в плохие позиции: где-то потеряна королева, где-то лагерь окружён, где-то пешки почти не двигаются, а движок-гоблин играет сильнее обычного игрока. Победа здесь строится не на простой тактике, а на правильном применении магии: нужно заменить слабую пешку на фигуру, пережить ответ движка и только потом развить атаку.\n\nОсобенность карты: почти в каждой карточке белые объективно стоят хуже. Без магии задача должна быть неприятной или почти проигранной.",
+    "order": 2,
+    "isPublished": true,
+    "boardTemplates": [],
+    "cards": [
       {
-        slug: "desert-pawn-break-template",
-        name: "Пешечный прорыв",
-        description: "Один проходной темп решает всю партию.",
-        fen: "4k3/8/3p4/8/4P3/8/8/4K3 w - - 0 1",
+        "slug": "forest-first-snare",
+        "order": 1,
+        "title": "Засада на рудничном мосту",
+        "text": "Гоблины заманили рыцарей на узкий мост. Белые потеряли королеву, а чёрные уже заняли центр. Обычная атака обречена, но в тылу осталась пешка-знаменосец. Если усилить её магией, можно создать вторую линию атаки и начать отбивать мост.\n\nРекомендуемая магическая идея:\nЗаменить c3 на ферзя или ладью. После этого ход перейдёт чёрным, но у белых появится тяжёлая фигура, которая помогает давить по центру и атаковать ферзя на d5.",
+        "congratulationsText": "Мост отбит! Гоблины потеряли строй и бросили осадные щиты в реку.",
+        "startingFen": "r3r1k1/pp3ppp/2n2n2/3qp3/3p4/2P2N1P/PP1N1PP1/R2R2K1 w - - 0 22",
+        "difficulty": 4,
+        "rewardGold": 360,
+        "rewardScore": 260,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "survive_half_moves",
+          "halfMoves": 30
+        }
       },
       {
-        slug: "desert-rook-checks-template",
-        name: "Шахи по пустыне",
-        description: "Ладья гонит короля по открытой доске.",
-        fen: "4k3/8/8/8/8/8/7R/4K3 w - - 0 1",
+        "slug": "forest-bishop-pin",
+        "order": 2,
+        "title": "Окружённый обоз рыцарей",
+        "text": "Рыцарский обоз зажат между скалами. У гоблинов королева и ладья, а у белых почти нет активных фигур. Но пешки на ферзевом фланге уже глубоко вошли во вражеские земли. Одна магическая замена может превратить пешечную стену в настоящую осадную башню.\n\nРекомендуемая магическая идея:\nЗаменить пешку b5 на ферзя. Да, после магии сразу ходят чёрные, но новая фигура на b5 далеко от чёрного короля и плохо ловится. Игрок получает шанс не просто выжить, а начать охоту на короля g8.",
+        "congratulationsText": "Обоз спасён! Рыцари вывезли припасы, а гоблинская засада захлебнулась.",
+        "startingFen": "2r3k1/5ppp/1p2p3/pP1pP3/P2P1q2/2P2P2/6PP/4R1K1 w - - 0 35",
+        "difficulty": 5,
+        "rewardGold": 460,
+        "rewardScore": 260,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "checkmate_in_moves",
+          "moves": 12
+        }
       },
       {
-        slug: "desert-minor-duel-template",
-        name: "Дуэль легких фигур",
-        description: "Слон против коня, цель — не дать сопернику активизироваться.",
-        fen: "4k3/8/8/8/3n4/8/2B5/4K3 w - - 0 1",
+        "slug": "forest-knight-outpost",
+        "order": 3,
+        "title": "Чёрная королева у ворот",
+        "text": "Гоблинская королева ворвалась прямо к воротам лагеря. Белые ещё держат линию, но чёрные фигуры активнее, а любая ошибка может привести к матовой атаке. Прямой размен невыгоден. Нужно магией создать защитника, который одновременно прикроет короля и даст контратаку.\n\nРекомендуемая магическая идея:\nЗаменить g2 на коня или ферзя. Конь на g2 может играть как защитник короля и атакующая фигура, а ферзь резко меняет баланс сил. Но так как ход после магии получает движок, дешёвая магия конём может быть интереснее, чем дорогой ферзь.",
+        "congratulationsText": "Ворота удержаны! Чёрная королева отступила, оставив у стен разбитую гоблинскую стражу.",
+        "startingFen": "r4rk1/pp3ppp/2n5/3p4/2pPq3/2P1P3/PPQ2PPP/R4RK1 w - - 0 18",
+        "difficulty": 6,
+        "rewardGold": 560,
+        "rewardScore": 360,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "capture_pieces",
+          "pieces": 6
+        }
       },
       {
-        slug: "desert-queen-race-template",
-        name: "Ферзевый мираж",
-        description: "Ферзь далеко, но угрозы появляются быстро.",
-        fen: "4k3/8/8/8/8/6q1/8/4KQ2 w - - 0 1",
+        "slug": "forest-queen-trap",
+        "order": 4,
+        "title": "Проклятый частокол",
+        "text": "Рыцари дошли до частокола, но их фигуры почти все выбиты. Чёрные давят королевой и ладьёй, а белый король вынужден прятаться за пешками. В обычной партии это неприятная оборона без перспективы. Здесь нужно не просто защищаться — нужно магией создать фигуру, которая заставит гоблинов отвлечься от атаки.\n\nРекомендуемая магическая идея:\nЗаменить d4 на ферзя — сильный, но дорогой вариант. Более интересный вариант — c4 в ладью: белые получают активную тяжёлую фигуру на открывающемся фланге, но чёрные всё равно успевают сделать ответный ход.",
+        "congratulationsText": "Частокол прорван! Гоблины больше не могут удерживать перевал.",
+        "startingFen": "4r1k1/1p3ppp/p1p5/3p4/2PPq3/1P2P2P/P4PP1/3Q2K1 w - - 0 28",
+        "difficulty": 7,
+        "rewardGold": 760,
+        "rewardScore": 760,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "survive_half_moves",
+          "halfMoves": 15
+        }
       },
       {
-        slug: "desert-last-stand-template",
-        name: "Последняя стоянка",
-        description: "Плотная позиция на выживание против активного короля.",
-        fen: "4k3/8/4p3/3pP3/3P4/8/8/4K3 w - - 0 1",
-      },
-    ],
-    cards: [
-      {
-        slug: "desert-open-heat",
-        order: 1,
-        title: "Жара первых ходов",
-        text: "В пустыне нельзя тратить темпы. Продержись стартовый отрезок.",
-        congratulationsText: "Первые угрозы пережиты, путь открыт.",
-        objective: { type: "checkmate" },
-        difficulty: 2,
-        rewardGold: 220,
-        rewardScore: 220,
-        completed: false,
-        boardTemplateSlug: null,
-        templateName: "Стандартная расстановка",
-      },
-      {
-        slug: "desert-pawn-break",
-        order: 2,
-        title: "Пешечный прорыв",
-        text: "Найди точный темп в пешечном окончании.",
-        congratulationsText: "Пешка прошла, позиция выиграна.",
-        objective: { type: "checkmate" },
-        difficulty: 3,
-        rewardGold: 320,
-        rewardScore: 320,
-        completed: false,
-        boardTemplateSlug: "desert-pawn-break-template",
-        templateName: "Пешечный прорыв",
-      },
-      {
-        slug: "desert-rook-checks",
-        order: 3,
-        title: "Ладейные шахи",
-        text: "Дай шах и удержи инициативу ладьей.",
-        congratulationsText: "Король загнан под шахи.",
-        objective: { type: "checkmate" },
-        difficulty: 4,
-        rewardGold: 420,
-        rewardScore: 420,
-        completed: false,
-        boardTemplateSlug: "desert-rook-checks-template",
-        templateName: "Шахи по пустыне",
-      },
-      {
-        slug: "desert-queen-race",
-        order: 4,
-        title: "Ферзевый мираж",
-        text: "Ферзи готовы к размену угрозами. Переживи критические ходы.",
-        congratulationsText: "Мираж рассеялся, атака отбита.",
-        objective: { type: "checkmate" },
-        difficulty: 5,
-        rewardGold: 520,
-        rewardScore: 520,
-        completed: false,
-        boardTemplateSlug: "desert-queen-race-template",
-        templateName: "Ферзевый мираж",
-      },
-      {
-        slug: "desert-last-stand",
-        order: 5,
-        title: "Последняя стоянка",
-        text: "Финал пустыни: удержи пешечный фронт до конца.",
-        congratulationsText: "Песчаная дорога пройдена.",
-        objective: { type: "checkmate" },
-        difficulty: 6,
-        rewardGold: 620,
-        rewardScore: 620,
-        completed: false,
-        boardTemplateSlug: "desert-last-stand-template",
-        templateName: "Последняя стоянка",
-      },
-    ],
+        "slug": "forest-final-file",
+        "order": 5,
+        "title": "Громовая мельница",
+        "text": "У самой Громовой мельницы стоит главный осадный механизм гоблинов. Белые слабо развиты, фигур мало, а чёрные готовы давить по центру. Это не позиция для красивого мата в три хода. Нужно сначала создать магическую фигуру, пережить лучший ответ движка, а затем постепенно захватить инициативу.\n\nРекомендуемая магическая идея:\nЗаменить e3 на ферзя. Это не мгновенная победа: после магии ходят чёрные, и движок попытается разменять или вскрыть короля. Но у белых появляется второй ферзь в центре, и позиция из почти безнадёжной превращается в боевую.",
+        "congratulationsText": "Громовая мельница остановлена! Осадные машины гоблинов разрушены, а Ржавый перевал снова открыт для рыцарей.",
+        "startingFen": "2r3k1/1p3ppp/p1q1pn2/3p4/1P1P4/P1P1P1P1/2Q2P1P/3R2K1 w - - 0 31",
+        "difficulty": 8,
+        "rewardGold": 760,
+        "rewardScore": 560,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "checkmate_in_moves",
+          "moves": 18
+        }
+      }
+    ]
   },
   {
-    slug: "citadel-checkmate-ascent",
-    title: "Подъем к матовой цитадели",
-    description: "Финальная встроенная карта с более острыми позициями и высокой наградой.",
-    order: 4,
-    isPublished: true,
-    boardTemplates: [
+    "slug": "desert-endgame-road",
+    "title": "3. Топи Костяного Барабана",
+    "description": "За Ржавым перевалом рыцари входят в болотные земли, где гоблины построили лагерь вокруг огромного костяного барабана. Его бой усиливает врагов: они двигаются точнее, защищаются упорнее и почти не прощают ошибок.\n\nНа этой карте рыцари почти всегда начинают в худшей позиции. У гоблинов активные фигуры, лишний материал или сильное давление на короля. Победа строится не на обычной тактике, а на выборе правильной магии: какую пешку превратить, в какую фигуру, и как пережить ответ движка.",
+    "order": 3,
+    "isPublished": true,
+    "boardTemplates": [],
+    "cards": [
       {
-        slug: "citadel-back-rank-template",
-        name: "Слабая последняя горизонталь",
-        description: "Король заперт, ладья может решить партию.",
-        fen: "6k1/6pp/8/8/8/8/5PPP/4R1K1 w - - 0 1",
+        "slug": "desert-open-heat",
+        "order": 1,
+        "title": "Трясинный дозор",
+        "text": "Рыцарский дозор увяз в трясине. Гоблины заняли сухую дорогу, поставили ладью на открытую линию и держат центр ферзём. У белых мало фигур, и без магии им почти нечем давить на вражеский лагерь.\n\nРекомендуемая магическая идея:\ne3 в ферзя или c3 в ладью. Пешка e3 стоит достаточно центрально, но после магии ходят чёрные, поэтому движок может сразу попытаться разменять новую фигуру. c3 в ладью дешевле и создаёт давление по третьей горизонтали.",
+        "congratulationsText": "Дозор выбрался из трясины! Гоблинские следопыты разбиты, а путь через болото найден.",
+        "startingFen": "2r3k1/1p3ppp/p1n1pq2/3p4/3P4/P1P1P3/1P1N1PPP/3R2K1 w - - 0 25",
+        "difficulty": 4,
+        "rewardGold": 420,
+        "rewardScore": 220,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "capture_pieces",
+          "pieces": 8
+        }
       },
       {
-        slug: "citadel-queen-battery-template",
-        name: "Ферзевая батарея",
-        description: "Ферзь и ладья давят по одной линии.",
-        fen: "6k1/6pp/8/8/8/8/5PPP/4RQK1 w - - 0 1",
+        "slug": "desert-pawn-break",
+        "order": 2,
+        "title": "Хижина болотной ведьмы",
+        "text": "Болотная ведьма гоблинов прячет армию в тумане. У чёрных лишняя ладья, активный ферзь и конь, который готов прыгнуть в центр. Белые имеют опасную проходную пешку, но одной пешки мало — её нужно превратить в настоящую угрозу.\n\nРекомендуемая магическая идея:\nd5 в ферзя — самый прямой вариант, но он дорогой и даёт движку первый ответ. Более интересный вариант — d5 в коня: фигура появляется глубоко в лагере гоблинов и может создавать вилки, не будучи такой очевидной целью для размена.",
+        "congratulationsText": "Хижина ведьмы сожжена! Туман рассеялся, и гоблины потеряли своё колдовское укрытие.",
+        "startingFen": "r5k1/5ppp/1p1q1n2/p1pP4/P1P1P3/6P1/5PBP/3Q2K1 w - - 0 30",
+        "difficulty": 5,
+        "rewardGold": 518,
+        "rewardScore": 500,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "checkmate_in_moves",
+          "moves": 16
+        }
       },
       {
-        slug: "citadel-knight-check-template",
-        name: "Конный шах у ворот",
-        description: "Конь рядом с королем, но нужен точный маршрут.",
-        fen: "4k3/8/8/8/3N4/8/8/4K3 w - - 0 1",
+        "slug": "desert-rook-checks",
+        "order": 3,
+        "title": "Барабанный круг",
+        "text": "В центре болот стоит костяной барабан. Пока он звучит, гоблины атакуют без страха. Белый король защищён слабо, а чёрный ферзь уже забрался в центр. В обычной партии белым пришлось бы долго обороняться, но магия может создать фигуру, которая одновременно защищает короля и атакует ферзя.\n\nРекомендуемая магическая идея:\ng3 в коня — сильная защитная магия. Конь около короля может перекрывать поля атаки и одновременно нападать на важные центральные клетки. c4 в ладью — более агрессивный вариант, но после ответа движка белым придётся аккуратно защищаться.",
+        "congratulationsText": "Костяной барабан расколот! Гоблины потеряли боевой ритм и начали отступать в топи.",
+        "startingFen": "4r1k1/pp3ppp/2p2n2/3p4/2P1q3/PP2P1P1/1B1Q1P1P/4R1K1 w - - 0 26",
+        "difficulty": 6,
+        "rewardGold": 600,
+        "rewardScore": 600,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "survive_half_moves",
+          "halfMoves": 30
+        }
       },
       {
-        slug: "citadel-bishop-net-template",
-        name: "Слоновая сеть",
-        description: "Диагональ открыта, королю соперника тесно.",
-        fen: "6k1/8/8/8/8/2B5/8/4K3 w - - 0 1",
+        "slug": "desert-queen-race",
+        "order": 4,
+        "title": "Дамба из черепов",
+        "text": "Гоблины построили дамбу из костей и брёвен, перекрыв рыцарям путь. Чёрный ферзь стоит глубоко в белом лагере, ладья контролирует открытую линию, а белые фигуры связаны защитой короля. Без магии белым трудно даже начать контратаку.\n\nРекомендуемая магическая идея:\nb5 в ферзя — опасная магия рядом с ферзевым флангом чёрных. Но движок получает ход и может попытаться закрыться или разменяться. Более хитрый вариант — b5 в коня: он может прыгать в слабые поля и создавать угрозы без немедленного размена ферзей.",
+        "congratulationsText": "Дамба рухнула! Вода смыла укрепления гоблинов, и рыцари прорвались к главному лагерю.",
+        "startingFen": "2r3k1/5ppp/1p2pn2/pPp5/P1Pq4/3P2P1/4QPBP/5RK1 w - - 0 33",
+        "difficulty": 7,
+        "rewardGold": 700,
+        "rewardScore": 700,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "capture_pieces",
+          "pieces": 5
+        }
       },
       {
-        slug: "citadel-final-template",
-        name: "Тронный зал",
-        description: "Сильнейшая встроенная позиция перед пользовательскими картами.",
-        fen: "6k1/5ppp/8/8/8/8/5PPP/4RQK1 w - - 0 1",
-      },
-    ],
-    cards: [
-      {
-        slug: "citadel-gate",
-        order: 1,
-        title: "Ворота цитадели",
-        text: "На входе важна надежность: переживи серию ответов движка.",
-        congratulationsText: "Ворота открыты.",
-        objective: { type: "checkmate" },
-        difficulty: 4,
-        rewardGold: 300,
-        rewardScore: 300,
-        completed: false,
-        boardTemplateSlug: null,
-        templateName: "Стандартная расстановка",
-      },
-      {
-        slug: "citadel-back-rank",
-        order: 2,
-        title: "Последняя горизонталь",
-        text: "Ищи матовую сетку по слабой горизонтали.",
-        congratulationsText: "Горизонталь вскрыта.",
-        objective: { type: "checkmate" },
-        difficulty: 5,
-        rewardGold: 450,
-        rewardScore: 450,
-        completed: false,
-        boardTemplateSlug: "citadel-back-rank-template",
-        templateName: "Слабая последняя горизонталь",
-      },
-      {
-        slug: "citadel-knight-check",
-        order: 3,
-        title: "Конный шах у ворот",
-        text: "Найди шах конем и сохрани инициативу.",
-        congratulationsText: "Шах найден, оборона дрогнула.",
-        objective: { type: "checkmate" },
-        difficulty: 6,
-        rewardGold: 600,
-        rewardScore: 600,
-        completed: false,
-        boardTemplateSlug: "citadel-knight-check-template",
-        templateName: "Конный шах у ворот",
-      },
-      {
-        slug: "citadel-queen-battery",
-        order: 4,
-        title: "Ферзевая батарея",
-        text: "Ферзь и ладья готовы к решающему удару.",
-        congratulationsText: "Батарея пробила защиту.",
-        objective: { type: "checkmate" },
-        difficulty: 7,
-        rewardGold: 750,
-        rewardScore: 750,
-        completed: false,
-        boardTemplateSlug: "citadel-queen-battery-template",
-        templateName: "Ферзевая батарея",
-      },
-      {
-        slug: "citadel-final-room",
-        order: 5,
-        title: "Тронный зал",
-        text: "Последняя встроенная битва перед пользовательскими картами.",
-        congratulationsText: "Цитадель взята. Теперь можно строить свои карты.",
-        objective: { type: "checkmate" },
-        difficulty: 8,
-        rewardGold: 950,
-        rewardScore: 950,
-        completed: false,
-        boardTemplateSlug: "citadel-final-template",
-        templateName: "Тронный зал",
-      },
-    ],
+        "slug": "desert-last-stand",
+        "order": 5,
+        "title": "Сердце Костяного Барабана",
+        "text": "Рыцари добрались до центра болотного лагеря. Перед ними — сам Костяной Барабан, вокруг которого собрались лучшие гоблинские воины. У чёрных активный ферзь, ладья, конь и плотная пешечная стена. Белые стоят хуже, но у них есть пешки, из которых можно создать решающую фигуру.\n\nРекомендуемая магическая идея:\ne3 в ферзя — главный силовой вариант. Белые получают вторую тяжёлую фигуру рядом с центром, но чёрные сразу ходят и могут попытаться вскрыть короля или разменять активную фигуру. Победа должна ощущаться не как «нажал магию и выиграл», а как длинная партия, где магия только возвращает шанс.",
+        "congratulationsText": "Сердце барабана разбито! Болото замолчало, а гоблинское войско лишилось своей тёмной силы.",
+        "startingFen": "6k1/pp3ppp/2r1pn2/3p4/2pPq3/P1P1P1P1/1P2QP1P/2R3K1 w - - 0 31",
+        "difficulty": 8,
+        "rewardGold": 800,
+        "rewardScore": 800,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "checkmate_in_moves",
+          "moves": 22
+        }
+      }
+    ]
   },
+  {
+    "slug": "citadel-checkmate-ascent",
+    "title": "4. Пепельные ворота Дымного Хребта",
+    "description": "После болот рыцари выходят к Дымному Хребту. Здесь гоблины построили пепельные ворота — укреплённый проход к землям чёрного дракона.\n\nВраг сильнее, фигур у рыцарей меньше, а движок-гоблин играет точно и жадно наказывает ошибки. Победа возможна только через магию: нужно выбрать, какую пешку превратить в фигуру, пережить ответ противника и постепенно переломить позицию.",
+    "order": 4,
+    "isPublished": true,
+    "boardTemplates": [],
+    "cards": [
+      {
+        "slug": "citadel-gate",
+        "order": 1,
+        "title": "Ущелье засадников",
+        "text": "Гоблины перекрыли узкое ущелье и поставили ферзя прямо в центр. Рыцари потеряли слишком много фигур, а обычная атака почти невозможна. Но несколько пешек ещё держат строй. Если правильно усилить одну из них, можно начать серию шахов и заставить вражеского короля метаться по укреплению.\n\nРекомендуемая магическая идея:\ne3 в ферзя — силовой вариант, который даёт белым контригру против центра. Но после магии чёрные ходят первыми, поэтому ферзь может сразу попасть под давление. Более дешёвый и интересный вариант — c3 в ладью: она помогает давить по линии и искать шахи сбоку.",
+        "congratulationsText": "Засада сорвана! Гоблины рассыпались по склонам, а рыцари прошли через ущелье.",
+        "startingFen": "2r3k1/5ppp/p3pn2/1p1p4/3q4/2P1PN2/PPB2PPP/3R3K w - - 0 27",
+        "difficulty": 5,
+        "rewardGold": 550,
+        "rewardScore": 550,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "give_checks",
+          "checks": 3
+        }
+      },
+      {
+        "slug": "citadel-back-rank",
+        "order": 2,
+        "title": "Караван с цепями",
+        "text": "Гоблины ведут караван с цепями и осадными крюками. У чёрных две ладьи, ферзь и активный слон. У белых почти нет тяжёлых фигур, а король стоит в углу. Прямо выиграть нельзя — нужно магией создать ударную фигуру и начать охоту на плохо защищённые гоблинские отряды.\n\nРекомендуемая магическая идея:\ne4 в ферзя сильно меняет баланс, но ход сразу у чёрных, и они могут попытаться разменять нового ферзя. f3 в ладью дешевле и может дать давление по третьей горизонтали, особенно если чёрный ферзь задержится на c5.",
+        "congratulationsText": "Караван разбит! Рыцари захватили цепи и обратили осадные крюки против самих гоблинов.",
+        "startingFen": "r3r2k/5pbp/p3p1p1/2q5/1p1pP3/1P1P1P2/P2NB1PP/5R1K w - - 0 32",
+        "difficulty": 6,
+        "rewardGold": 650,
+        "rewardScore": 650,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "capture_pieces",
+          "pieces": 5
+        }
+      },
+      {
+        "slug": "citadel-knight-check",
+        "order": 3,
+        "title": "Мост над лавовой рекой",
+        "text": "Рыцари оказались на узком мосту над лавовой рекой. Гоблины давят ферзём и конём, а сзади уже подходят ладьи. У белых почти нет активных фигур, и главная задача — не победить сразу, а пережить сильнейшую атаку движка после применения магии.\n\nРекомендуемая магическая идея:\ng3 в коня — хороший защитный вариант. Конь рядом с королём помогает перекрывать атаки и может нападать на ферзя. g3 в ферзя сильнее по материалу, но опаснее: после хода чёрных новая фигура может стать целью.",
+        "congratulationsText": "Мост удержан! Гоблины не смогли сбросить рыцарей в лавовую реку.",
+        "startingFen": "r3r1k1/5ppp/p3p3/3p4/3P4/2nBP1P1/Pq3P1P/6RK w - - 0 29",
+        "difficulty": 6,
+        "rewardGold": 600,
+        "rewardScore": 600,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "survive_half_moves",
+          "halfMoves": 18
+        }
+      },
+      {
+        "slug": "citadel-queen-battery",
+        "order": 4,
+        "title": "Башня Чёрного Ворона",
+        "text": "На вершине башни сидит чёрный ворон — разведчик гоблинского шамана. Пока он жив, враг видит каждый манёвр рыцарей. Белые стоят сжато, чёрные фигуры активнее, а король гоблинов спрятан в углу. Нужно не искать быстрый мат, а создать постоянное давление шахами.\n\nРекомендуемая магическая идея:\ng3 в ладью — интересный вариант для шахов по горизонталям и вертикалям. b3 в ферзя даёт больше силы, но фигура появляется далеко от короля, поэтому игроку придётся строить атаку постепенно.",
+        "congratulationsText": "Чёрный ворон сбит! Башня ослепла, и гоблины потеряли свою разведку.",
+        "startingFen": "1r1r3k/pb3ppp/5q2/4n3/2N5/1P2P1P1/P3QPBP/4R1K1 w - - 0 34",
+        "difficulty": 7,
+        "rewardGold": 750,
+        "rewardScore": 750,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "give_checks",
+          "checks": 4
+        }
+      },
+      {
+        "slug": "citadel-final-room",
+        "order": 5,
+        "title": "Пепельные ворота",
+        "text": "Рыцари дошли до самих Пепельных ворот. Чёрные держат крепость двумя ладьями, ферзём, слоном и конём. У белых позиция хуже: король в углу, фигур мало, а пешечная структура почти не даёт пространства. Но одна магическая замена может создать второй центр силы и превратить оборону в наступление.\n\nРекомендуемая магическая идея:\ne3 в ферзя — главный вариант для финала. Но это не мгновенная победа: чёрные получают ход и могут попытаться вскрыть короля или навязать размен. Игроку нужно пережить контрудар, удержать нового ферзя и постепенно забрать инициативу.",
+        "congratulationsText": "Пепельные ворота разрушены! Рыцари вошли в Дымный Хребет, а гоблины бежали к логову чёрного дракона.",
+        "startingFen": "2r1r1k1/5pbp/p1q1pn2/3p4/2pP4/P1P1P1P1/1P1Q1PBP/5R1K w - - 0 33",
+        "difficulty": 8,
+        "rewardGold": 950,
+        "rewardScore": 950,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "checkmate_in_moves",
+          "moves": 28
+        }
+      }
+    ]
+  },
+  {
+    "slug": "holmy-darloga",
+    "title": "5. Рейд Серебряной кавалерии",
+    "description": "Гоблины больше не идут обычной пехотой. Они выставили странную армию: осадные башни, боевых слонов-шаманов и тяжёлые ладьи, которые давят по открытым линиям.У рыцарей почти нет тяжёлых фигур. Их сила — кавалерия: быстрые кони, манёвры, вилки, обходы и магическое усиление пешек.\n\nЭта карта должна ощущаться необычно: гоблины играют армией ладей и слонов, а рыцари отвечают конным рейдом. Белые чаще стоят хуже по материалу, но за счёт магии могут создать решающую фигуру и сломать оборону.",
+    "order": 5,
+    "isPublished": true,
+    "boardTemplates": [],
+    "cards": [
+      {
+        "slug": "card-1781693377447",
+        "order": 1,
+        "title": "Пыльный авангард",
+        "text": "Рыцарская кавалерия первой влетает в пыльное ущелье. Но гоблины уже расставили осадные ладьи на верхних скалах, а слоны-шаманы перекрывают диагонали. Обычной атаки не хватит — нужно магией создать тяжёлую точку давления и заставить чёрного короля двигаться.\n\nРекомендуемая магическая идея:\nd3 в ферзя — сильный, но дорогой вариант. Новый ферзь появляется в центре и может помогать коням создавать шахи. Но после магии ходят чёрные, поэтому гоблины могут сразу начать охоту на новую фигуру. Более дешёвый вариант — a2 в ладью, чтобы давить сбоку и не подставлять центр.",
+        "congratulationsText": "Авангард прорвался! Серебряная кавалерия заставила гоблинские башни развернуться назад.",
+        "startingFen": "r2r2kr/1b2b1b1/p1p2p1p/3p4/5N2/2NP3P/PN2N1P1/6K1 w - - 0 24",
+        "difficulty": 5,
+        "rewardGold": 500,
+        "rewardScore": 500,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "give_checks",
+          "checks": 3
+        }
+      },
+      {
+        "slug": "card-1781693804337",
+        "order": 2,
+        "title": "Три осадные башни",
+        "text": "Перед рыцарями стоят три гоблинские башни. Их прикрывают слоны, а пешки держат проходы между скалами. У белых почти одна кавалерия — много коней, но нет ферзя и ладей. Чтобы победить, нужно не идти в лоб, а использовать вилки, нападения на перегруженные фигуры и магическое усиление пешки.\n\nРекомендуемая магическая идея:\nb3 в ладью хорошо подходит по теме карты: кавалерия получает мобильную осадную поддержку с фланга. e3 в ферзя сильнее, но рискованнее: чёрные ходят после магии и могут попытаться связать нового ферзя через слонов.",
+        "congratulationsText": "Три башни пали! Гоблины потеряли тяжёлую поддержку, а рыцарские кони ворвались в проход.",
+        "startingFen": "r1r2rk1/1b2bp1p/p2p2pb/2p5/3N2N1/NP2P3/2N2N1P/6K1 w - - 0 30",
+        "difficulty": 6,
+        "rewardGold": 600,
+        "rewardScore": 600,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "capture_pieces",
+          "pieces": 5
+        }
+      },
+      {
+        "slug": "card-1781693857000",
+        "order": 3,
+        "title": "Кольцо косых диагоналей",
+        "text": "Гоблинские слоны выстроили магическое кольцо. Каждая диагональ простреливается, а ладьи ждут момента, чтобы ворваться по открытым линиям. У рыцарей много коней, но мало пешек и почти нет пространства. Победа здесь начинается не с атаки, а с выживания под давлением сильного движка.\n\nРекомендуемая магическая идея:\nc3 в ладью — защитно-активная магия. Ладья помогает держать третью горизонталь и может мешать вторжению чёрных ладей. a2 в ферзя даёт больше силы, но фигура появляется далеко от короля, и после ответа движка её ещё нужно успеть включить в защиту.",
+        "congratulationsText": "Кольцо диагоналей разорвано! Кавалерия выдержала натиск слонов-шаманов.",
+        "startingFen": "r3r1kr/1p4b1/pb1b1p1p/3p4/4N3/2P3N1/P2N1P1P/1N4K1 w - - 0 34",
+        "difficulty": 6,
+        "rewardGold": 700,
+        "rewardScore": 700,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "survive_half_moves",
+          "halfMoves": 44
+        }
+      },
+      {
+        "slug": "card-1781705862844",
+        "order": 4,
+        "title": "Чёрная арка кавалеристов",
+        "text": "Рыцари выходят к Чёрной арке — месту, где гоблины обычно ломают вражескую конницу. Но на этот раз у белых слишком много кавалерии, чтобы закрыть все поля. Задача не в быстром мате, а в постоянном давлении: заставлять короля гоблинов снова и снова отвечать на шахи.\n\nРекомендуемая магическая идея:\nb2 в ладью — хороший способ добавить дальнобойную фигуру к армии коней. Она может давить по второй горизонтали и помогать организовывать шахи. d2 в ферзя — сильный вариант, но после хода чёрных ферзь может попасть под давление слонов.",
+        "congratulationsText": "Чёрная арка взята! Гоблинский король не выдержал натиска кавалерии.",
+        "startingFen": "r1r3kr/1b1b1bp1/p1p1p2b/5N2/2N4N/N3N3/1P1P2P1/1K6 w - - 0 38",
+        "difficulty": 6,
+        "rewardGold": 600,
+        "rewardScore": 600,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "give_checks",
+          "checks": 5
+        }
+      },
+      {
+        "slug": "card-1781706016150",
+        "order": 5,
+        "title": "Бастион башенных слонов",
+        "text": "Финальный бастион защищают башенные слоны — огромные гоблинские машины, которые двигаются как ладьи и слоны. У чёрных четыре ладьи и три слона, а у белых почти одна кавалерия. В обычной партии это выглядело бы безнадёжно, но магия может дать рыцарям фигуру, которой не хватает для последнего прорыва.\n\nРекомендуемая магическая идея:\nc2 в ладью — тематичный вариант: кавалерия получает одну тяжёлую фигуру для борьбы с башнями. a2 в ферзя сильнее, но не должен давать мгновенную победу: после магии чёрные ходят первыми и могут попытаться закрыть линии или начать контратаку по королю.",
+        "congratulationsText": "Бастион башенных слонов пал! Кавалерия рыцарей доказала, что скорость сильнее каменных стен.",
+        "startingFen": "r1r2rkr/1b2b1b1/p2p1p1p/4N3/6N1/3N3P/PNP2P2/6K1 w - - 0 42",
+        "difficulty": 6,
+        "rewardGold": 700,
+        "rewardScore": 700,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "checkmate_in_moves",
+          "moves": 36
+        }
+      },
+      {
+        "slug": "card-1781706142982",
+        "order": 6,
+        "title": "Босс: Король Башенных Слонов",
+        "text": "Король Башенных Слонов не прячется в обычной крепости. Его армия стоит странным строем: ладьи давят сверху и сбоку, слоны держат длинные диагонали, а рыцарская кавалерия застряла в центре без тяжёлых фигур.\n\nБелые фигуры активны, но хрупки. Если ошибиться, гоблинские ладьи быстро вскроют короля. Чтобы победить босса, нужно превратить одну из пешек в фигуру поддержки и построить длинную атаку на короля.\n\nРекомендуемая магическая идея:\nc2 в ладью — тематичный вариант: кавалерия получает тяжёлую поддержку для борьбы с гоблинскими башнями.\na2 в ферзя — более сильный вариант, но ферзь появляется далеко от центра, и после магии чёрные сразу получают ход.",
+        "congratulationsText": "Король Башенных Слонов пал! Последняя осадная армия гоблинов рассыпалась, а Серебряная кавалерия открыла путь к логову чёрного дракона.",
+        "startingFen": "2r2rkr/bbbbbbb1/p2p1p1p/1r2N3/2NP2N1/1P1NP1PP/PNP2P1R/4RK2 w - - 0 48",
+        "difficulty": 7,
+        "rewardGold": 700,
+        "rewardScore": 700,
+        "completed": false,
+        "boardTemplateSlug": null,
+        "templateName": "Пользовательская позиция",
+        "objective": {
+          "type": "give_checks",
+          "checks": 6
+        }
+      }
+    ]
+  }
 ];
+
+export const demoMapSeed: DemoQuestMapSeed = demoMapSeeds[0]!;
 
 export function getDemoCardBySlug(slug: string) {
   for (const map of demoMapSeeds) {
@@ -521,8 +600,8 @@ export function validateDemoSeedData() {
     }
     mapOrders.add(map.order);
 
-    if (map.cards.length !== 5) {
-      issues.push(`Карта ${map.slug} должна содержать ровно 5 карточек.`);
+    if (map.cards.length === 0) {
+      issues.push(`Карта ${map.slug} должна содержать хотя бы одну карточку.`);
     }
 
     for (const template of map.boardTemplates) {
@@ -558,6 +637,15 @@ export function validateDemoSeedData() {
 
       if (card.boardTemplateSlug && !templateSlugs.has(card.boardTemplateSlug)) {
         issues.push(`Карточка ${card.slug} ссылается на неизвестный шаблон ${card.boardTemplateSlug}.`);
+      }
+
+      if (card.startingFen) {
+        const result = validateBoardTemplateFen(card.startingFen);
+        if (!result.ok) {
+          issues.push(
+            `Карточка ${card.slug} содержит невалидный FEN: ${result.issues.map((issue) => issue.code).join(", ")}`,
+          );
+        }
       }
     }
   }

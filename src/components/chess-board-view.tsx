@@ -82,7 +82,7 @@ export function ChessBoardView({
       <div className="board-controls">
         <label>
           <span className="board-control-icon-label" title="Доска">
-            <Image className="board-control-icon" src={publicPath("/wall/1/chess-board.png")} alt="Доска" width={30} height={30} />
+            <Image className="board-control-icon" src={publicPath("/assets/images/icons/chess-board.png")} alt="Доска" width={30} height={30} />
           </span>
           <select aria-label="Доска" value={boardTheme} onChange={(event) => changeBoardTheme(event.target.value as BoardTheme)}>
             <option value="beige">Коричневая</option>
@@ -94,7 +94,7 @@ export function ChessBoardView({
         </label>
         <label>
           <span className="board-control-icon-label" title="Фигуры">
-            <Image className="board-control-icon" src={publicPath("/wall/1/pawn.png")} alt="Фигуры" width={30} height={30} />
+            <Image className="board-control-icon" src={publicPath("/assets/images/icons/pawn.png")} alt="Фигуры" width={30} height={30} />
           </span>
           <select aria-label="Фигуры" value={pieceTheme} onChange={(event) => changePieceTheme(event.target.value as PieceTheme)}>
             {PIECE_THEME_OPTIONS.map((option) => (
@@ -114,7 +114,7 @@ export function ChessBoardView({
         <div className="board-rank-labels" aria-hidden="true">
           {orientedRanks.map((rank) => <span key={`left-${rank}`}>{rank}</span>)}
         </div>
-        <div className="board-placeholder chess-board" aria-label={ariaLabel}>
+        <div className="board-placeholder chess-board" role="group" aria-label={ariaLabel}>
           {orientedSquares.map((square) => {
             const isSelected = square.square === selectedSquare;
             const isLegalMove = legalMoveSquares.includes(square.square);
@@ -194,7 +194,7 @@ function isPieceTheme(value: string | null): value is PieceTheme {
 function getPieceImageSrc(piece: FenBoardPiece, theme: PieceTheme) {
   const color = piece.code === piece.code.toUpperCase() ? "white" : "black";
   const pieceName = getPieceName(piece.code);
-  return publicPath(`/pieces/${theme}/${color}-${pieceName}.png`);
+  return publicPath(`/assets/images/pieces/${theme}/${color}-${pieceName}.png`);
 }
 
 function getPieceName(code: string) {

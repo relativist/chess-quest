@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import {useEffect, useMemo, useRef, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {createPortal} from "react-dom";
 import {Chess, type Move, type Square} from "chess.js";
 import {ChessBoardView} from "@/components/chess-board-view";
 import {type FenBoardSquare, fenToBoardSquares} from "@/lib/chess/fen-board";
@@ -13,6 +14,7 @@ import {
 } from "@/lib/chess/engine-difficulty";
 import {type CardObjective, evaluateCardObjective, objectiveProgressLabel} from "@/lib/quest/card-objectives";
 import {MAGIC_UPGRADES, type MagicUpgradeSpec} from "@/lib/quest/magic-upgrades";
+import {CAMPAIGN_UNDO_COST_GOLD} from "@/lib/quest/game-costs";
 import {publicPath} from "@/lib/routing/public-path";
 
 type PlayerSide = "black" | "white";
@@ -29,7 +31,7 @@ type ChessGameClientProps = {
   chestIconSrc: string;
   clueIconSrc: string;
   coinIconSrc: string;
-  completeCardAction: (formData: FormData) => void | Promise<void>;
+  completeCardAction?: (formData: FormData) => void | Promise<void>;
   congratulationsText: string;
   captureSoundSrc: string;
   defeatedEnemyImageSrc: string;
@@ -37,20 +39,26 @@ type ChessGameClientProps = {
   defeatSoundSrc: string;
   difficulty: number;
   difficultyIconSrc: string;
+  exitHref?: string;
+  exitLabel?: string;
+  gameMode?: "campaign" | "solo";
   gameStateIconSrc: string;
-  grantSecretGoldAction: () => Promise<SpendMagicGoldResult>;
+  grantSecretGoldAction?: () => Promise<SpendMagicGoldResult>;
   initialFen: string;
   magicIconSrc: string;
   objective: CardObjective;
   objectiveIconSrc: string;
   objectiveLabel: string;
+  objectiveProgressTargetId?: string;
   playerGold: number;
   playerSide: PlayerSide;
   resetIconSrc: string;
   rewardGold: number;
   rewardScore: number;
   scoreIconSrc: string;
-  spendMagicGoldAction: (formData: FormData) => Promise<SpendMagicGoldResult>;
+  showObjectiveProgress?: boolean;
+  spendMagicGoldAction?: (formData: FormData) => Promise<SpendMagicGoldResult>;
+  spendUndoGoldAction?: () => Promise<SpendMagicGoldResult>;
   stepSoundSrc: string;
   stockfishWorkerSrc: string;
   winSoundSrc: string;
@@ -98,6 +106,9 @@ export function ChessGameClient({
   defeatSoundSrc,
   difficulty,
   difficultyIconSrc,
+  exitHref = "/map",
+  exitLabel = "На карту",
+  gameMode = "campaign",
   gameStateIconSrc,
   grantSecretGoldAction,
   initialFen,
@@ -105,13 +116,16 @@ export function ChessGameClient({
   objective,
   objectiveIconSrc,
   objectiveLabel,
+  objectiveProgressTargetId,
   playerGold,
   playerSide,
   resetIconSrc,
   rewardGold,
   rewardScore,
   scoreIconSrc,
+  showObjectiveProgress = false,
   spendMagicGoldAction,
+  spendUndoGoldAction,
   stepSoundSrc,
   stockfishWorkerSrc,
   winSoundSrc,
@@ -129,6 +143,7 @@ export function ChessGameClient({
   const [drawReason, setDrawReason] = useState("Партия завершилась вничью.");
   const [victoryDialogOpen, setVictoryDialogOpen] = useState(false);
   const [victoryReason, setVictoryReason] = useState("Победа засчитана.");
+  const [battleConcluded, setBattleConcluded] = useState(false);
   const [engineStatus, setEngineStatus] = useState<EngineStatus>("loading");
   const [engineHintMove, setEngineHintMove] = useState<EngineHintMove | null>(null);
   const [engineErrorDialogOpen, setEngineErrorDialogOpen] = useState(false);
@@ -136,9 +151,11 @@ export function ChessGameClient({
   const [availableGoldState, setAvailableGoldState] = useState({ sourceGold: playerGold, value: playerGold });
   const [activeMagic, setActiveMagic] = useState<MagicUpgradeSpec | null>(null);
   const [magicPending, setMagicPending] = useState(false);
+  const [undoPending, setUndoPending] = useState(false);
   const [secretGoldPending, setSecretGoldPending] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [secretEngineControlsVisible, setSecretEngineControlsVisible] = useState(false);
+  const [objectiveProgressTarget, setObjectiveProgressTarget] = useState<HTMLElement | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(PLAYER_CLOCK_INITIAL_SECONDS);
   const [notice, setNotice] = useState<GameNotice>({
     tone: "info",
@@ -148,6 +165,7 @@ export function ChessGameClient({
   const workerRef = useRef<Worker | null>(null);
   const pendingEngineRequestRef = useRef<PendingEngineRequest | null>(null);
   const handleBestMoveRef = useRef<(line: string) => void>(() => undefined);
+  const openDefeatDialogRef = useRef<(reason: string) => void>(() => undefined);
   const stepAudioRef = useRef<HTMLAudioElement | null>(null);
   const captureAudioRef = useRef<HTMLAudioElement | null>(null);
   const checkAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -160,26 +178,27 @@ export function ChessGameClient({
   const playerGivenChecksRef = useRef(playerGivenChecks);
   const playerTurn = playerSideToTurn(playerSide);
   const engineDifficulty = getEngineDifficulty(difficulty);
+  const isSoloMode = gameMode === "solo";
 
   const chess = useMemo(() => new Chess(fen), [fen]);
   const boardSquares = useMemo(() => fenToBoardSquares(fen), [fen]);
   const availableGold = availableGoldState.sourceGold === playerGold ? availableGoldState.value : playerGold;
+  const isBattleFinished = battleConcluded || defeatDialogOpen || drawDialogOpen || victoryDialogOpen || isGameOver(chess);
   const legalMoves = useMemo(() => {
-    if (activeMagic || !selectedSquare || isGameOver(chess) || engineStatus === "thinking") return [];
+    if (activeMagic || !selectedSquare || isBattleFinished || engineStatus === "thinking") return [];
     return chess.moves({ square: selectedSquare, verbose: true }) as Move[];
-  }, [activeMagic, chess, engineStatus, selectedSquare]);
+  }, [activeMagic, chess, engineStatus, isBattleFinished, selectedSquare]);
   const legalMoveSquares = legalMoves.map((move) => move.to);
   const ownPawnSquares = getOwnPawnSquares(boardSquares, playerTurn);
   const highlightedSquares = activeMagic?.target === "own_pawn" ? ownPawnSquares : legalMoveSquares;
   const isPlayerTurn = chess.turn() === playerTurn;
-  const canAskEngine = engineStatus === "ready" && !isGameOver(chess);
+  const canAskEngine = engineStatus === "ready" && !isBattleFinished;
   const hasEngineHint = Boolean(engineHintMove);
-  const canAcceptEngineSurrender = engineStatus !== "loading" && !isGameOver(chess);
+  const canAcceptEngineSurrender = engineStatus !== "loading" && !isBattleFinished;
   const canUndoFullTurn = fenHistory.length > 2;
-  const isBattleFinished = defeatDialogOpen || drawDialogOpen || victoryDialogOpen || isGameOver(chess);
   const hasOpponentMoved = moveHistory.some((move) => move.includes("(Stockfish)"));
   const isPlayerClockRunning = hasOpponentMoved && isPlayerTurn && !isBattleFinished && !engineErrorDialogOpen;
-  const objectiveProgress = objectiveProgressLabel(objective, moveHistory.length, playerCapturedPieces, playerGivenChecks);
+  const objectiveProgress = objectiveProgressLabel(objective, moveHistory.length, playerCapturedPieces, playerGivenChecks, countPlayerMoves(moveHistory));
 
   useEffect(() => {
     fenRef.current = fen;
@@ -198,6 +217,14 @@ export function ChessGameClient({
   }, [playerGivenChecks]);
 
   useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      setObjectiveProgressTarget(objectiveProgressTargetId ? document.getElementById(objectiveProgressTargetId) : null);
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [objectiveProgressTargetId]);
+
+  useEffect(() => {
     if (!isPlayerClockRunning) return;
 
     const timerId = window.setInterval(() => {
@@ -210,7 +237,7 @@ export function ChessGameClient({
   useEffect(() => {
     if (remainingSeconds > 0 || isBattleFinished) return;
 
-    openDefeatDialog("Время вышло. Партия завершилась поражением.");
+    openDefeatDialogRef.current("Время вышло. Партия завершилась поражением.");
   }, [isBattleFinished, remainingSeconds]);
 
   function cancelPendingEngineMove() {
@@ -221,15 +248,17 @@ export function ChessGameClient({
     }
   }
 
-  function showEngineError(message: string) {
+  const showEngineError = useCallback((message: string) => {
     pendingEngineRequestRef.current = null;
     setEngineStatus((current) => (current === "thinking" ? "ready" : current));
     setEngineErrorText(message);
     setEngineErrorDialogOpen(true);
     setNotice({ tone: "error", text: message });
-  }
+  }, []);
 
   function openObjectiveVictory(reason: string) {
+    cancelPendingEngineMove();
+    setBattleConcluded(true);
     setSelectedSquare(null);
     setEngineHintMove(null);
     setActiveMagic(null);
@@ -243,6 +272,8 @@ export function ChessGameClient({
   }
 
   function openDrawDialog(reason: string) {
+    cancelPendingEngineMove();
+    setBattleConcluded(true);
     setSelectedSquare(null);
     setEngineHintMove(null);
     setActiveMagic(null);
@@ -256,6 +287,8 @@ export function ChessGameClient({
   }
 
   function openDefeatDialog(reason: string) {
+    cancelPendingEngineMove();
+    setBattleConcluded(true);
     setSelectedSquare(null);
     setEngineHintMove(null);
     setActiveMagic(null);
@@ -378,6 +411,7 @@ export function ChessGameClient({
 
   useEffect(() => {
     handleBestMoveRef.current = handleBestMove;
+    openDefeatDialogRef.current = openDefeatDialog;
   });
 
   useEffect(() => {
@@ -416,6 +450,18 @@ export function ChessGameClient({
       }
 
       if (line === "readyok") {
+        const readyFen = fenRef.current;
+        const readyChess = new Chess(readyFen);
+        if (readyChess.turn() !== playerTurn && !readyChess.isGameOver() && !pendingEngineRequestRef.current) {
+          const openingDifficulty = getEngineSearchDifficulty("apply", engineDifficulty);
+          pendingEngineRequestRef.current = { fen: readyFen, mode: "apply" };
+          setEngineStatus("thinking");
+          configureEngineStrength(worker, "apply", openingDifficulty);
+          worker.postMessage("position fen " + readyFen);
+          worker.postMessage("go movetime " + openingDifficulty.moveTimeMs);
+          return;
+        }
+
         setEngineStatus((current) => (current === "thinking" ? current : "ready"));
         return;
       }
@@ -439,7 +485,7 @@ export function ChessGameClient({
       worker.terminate();
       workerRef.current = null;
     };
-  }, [difficulty, engineDifficulty.skillLevel, engineDifficulty.uciElo, stockfishWorkerSrc]);
+  }, [engineDifficulty, playerTurn, showEngineError, stockfishWorkerSrc]);
 
   function clearEngineHint(message = "Подсказка скрыта.") {
     setEngineHintMove(null);
@@ -511,7 +557,7 @@ export function ChessGameClient({
       return;
     }
 
-    if (isGameOver(chess)) {
+    if (isBattleFinished) {
       setNotice({ tone: "info", text: "Партия уже завершена." });
       return;
     }
@@ -595,7 +641,7 @@ export function ChessGameClient({
 
     const objectiveResult = evaluateCardObjective(objective, {
       completedHalfMoves: nextMoveHistory.length,
-      completedPlayerMoves: countPlayerMoves(nextMoveHistory.length),
+      completedPlayerMoves: countPlayerMoves(nextMoveHistory),
       capturedPieces: playerCapturedPiecesRef.current,
       givenChecks: nextPlayerGivenChecks,
       isCheck: nextChessAfterMagic.isCheck(),
@@ -604,6 +650,11 @@ export function ChessGameClient({
 
     if (objectiveResult.completed) {
       openObjectiveVictory(objectiveResult.label);
+      return;
+    }
+
+    if (objectiveResult.failed) {
+      openDefeatDialog(objectiveResult.label);
       return;
     }
 
@@ -629,6 +680,16 @@ export function ChessGameClient({
   async function spendMagicGold(upgrade: MagicUpgradeSpec) {
     setMagicPending(true);
     try {
+      if (isSoloMode) {
+        setAvailableGoldState({ sourceGold: playerGold, value: Math.max(0, availableGold - upgrade.costGold) });
+        return true;
+      }
+
+      if (!spendMagicGoldAction) {
+        setNotice({ tone: "error", text: "Не удалось оплатить магию." });
+        return false;
+      }
+
       const formData = new FormData();
       formData.set("magicId", upgrade.id);
       const result = await spendMagicGoldAction(formData);
@@ -645,7 +706,7 @@ export function ChessGameClient({
   }
 
   async function handleSecretGoldButton() {
-    if (secretGoldPending) return;
+    if (secretGoldPending || !grantSecretGoldAction) return;
 
     setSecretGoldPending(true);
     try {
@@ -668,7 +729,7 @@ export function ChessGameClient({
       return;
     }
 
-    if (isGameOver(chess)) {
+    if (isBattleFinished) {
       setNotice({ tone: "info", text: "Партия уже завершена. Нажмите Сбросить позицию для новой проверки." });
       return;
     }
@@ -739,7 +800,7 @@ export function ChessGameClient({
     const objectiveResult = evaluateCardObjective(objective, {
       capturedPiece: playedMove.captured,
       completedHalfMoves: nextMoveHistory.length,
-      completedPlayerMoves: countPlayerMoves(nextMoveHistory.length),
+      completedPlayerMoves: countPlayerMoves(nextMoveHistory),
       capturedPieces: nextPlayerCapturedPieces,
       givenChecks: nextPlayerGivenChecks,
       isCheck: nextChess.isCheck(),
@@ -748,6 +809,11 @@ export function ChessGameClient({
 
     if (objectiveResult.completed) {
       openObjectiveVictory(objectiveResult.label);
+      return;
+    }
+
+    if (objectiveResult.failed) {
+      openDefeatDialog(objectiveResult.label);
       return;
     }
 
@@ -802,6 +868,7 @@ export function ChessGameClient({
   }
 
   function resetPosition() {
+    cancelPendingEngineMove();
     setFen(initialFen);
     setRemainingSeconds(PLAYER_CLOCK_INITIAL_SECONDS);
     setFenHistory([initialFen]);
@@ -817,12 +884,26 @@ export function ChessGameClient({
     setDrawDialogOpen(false);
     setEngineErrorDialogOpen(false);
     setVictoryDialogOpen(false);
+    setBattleConcluded(false);
     pendingEngineRequestRef.current = null;
     setEngineStatus((current) => (current === "thinking" ? "ready" : current));
+    if (isSoloMode) setAvailableGoldState({ sourceGold: playerGold, value: playerGold });
     setEngineHintMove(null);
     setActiveMagic(null);
     setEngineErrorText("Ошибка движка Stockfish.");
     setNotice({ tone: "info", text: "Позиция сброшена." });
+
+    const resetChess = new Chess(initialFen);
+    const worker = workerRef.current;
+    if (worker && engineStatus !== "loading" && engineStatus !== "error" && resetChess.turn() !== playerTurn && !resetChess.isGameOver()) {
+      const openingDifficulty = getEngineSearchDifficulty("apply", engineDifficulty);
+      pendingEngineRequestRef.current = { fen: initialFen, mode: "apply" };
+      setEngineStatus("thinking");
+      configureEngineStrength(worker, "apply", openingDifficulty);
+      worker.postMessage("position fen " + initialFen);
+      worker.postMessage("go movetime " + openingDifficulty.moveTimeMs);
+      setNotice({ tone: "info", text: "Stockfish делает первый ход белыми." });
+    }
   }
 
   function undoMoves(count: number) {
@@ -853,7 +934,41 @@ export function ChessGameClient({
     setDrawDialogOpen(false);
     setEngineErrorDialogOpen(false);
     setVictoryDialogOpen(false);
+    setBattleConcluded(false);
     setNotice({ tone: "info", text: count > 1 ? "Откатили ход игрока и ответ Stockfish." : "Откатили последний полуход." });
+  }
+
+  async function handleUndoFullTurn() {
+    if (!canUndoFullTurn || undoPending) return;
+
+    if (isSoloMode) {
+      undoMoves(2);
+      return;
+    }
+
+    if (availableGold < CAMPAIGN_UNDO_COST_GOLD) {
+      setNotice({ tone: "error", text: "Не хватает монет, чтобы отменить ход." });
+      return;
+    }
+
+    if (!spendUndoGoldAction) {
+      setNotice({ tone: "error", text: "Не удалось оплатить отмену хода." });
+      return;
+    }
+
+    setUndoPending(true);
+    try {
+      const result = await spendUndoGoldAction();
+      setAvailableGoldState({ sourceGold: playerGold, value: result.availableGold });
+      if (!result.ok) {
+        setNotice({ tone: "error", text: result.error ?? "Не удалось оплатить отмену хода." });
+        return;
+      }
+
+      undoMoves(2);
+    } finally {
+      setUndoPending(false);
+    }
   }
 
   return (
@@ -863,6 +978,13 @@ export function ChessGameClient({
       <audio ref={checkAudioRef} preload="auto" src={checkSoundSrc} />
       <audio ref={winAudioRef} preload="auto" src={winSoundSrc} />
       <audio ref={defeatAudioRef} preload="auto" src={defeatSoundSrc} />
+      {showObjectiveProgress && objectiveProgressTarget ? createPortal(
+        <p className="battle-heading-objective battle-heading-objective-progress" aria-live="polite">
+          <span>Цель: {objectiveLabel}</span>
+          <strong>Прогресс: {objectiveProgress}</strong>
+        </p>,
+        objectiveProgressTarget,
+      ) : null}
       <div className="release-battle-shell">
         <div className="battle-side-panel">
           <section className={`player-clock ${remainingSeconds <= 30 ? "low" : ""}`} aria-label="Оставшееся время игрока">
@@ -881,7 +1003,7 @@ export function ChessGameClient({
             <div className="magic-upgrades">
               {MAGIC_UPGRADES.map((upgrade) => {
                 const canAfford = upgrade.costGold <= availableGold;
-                const canUseMagic = canAfford && isPlayerTurn && engineStatus === "ready" && !isGameOver(chess) && !magicPending;
+                const canUseMagic = canAfford && isPlayerTurn && engineStatus === "ready" && !isBattleFinished && !magicPending;
                 const isActiveMagic = activeMagic?.id === upgrade.id;
 
                 return (
@@ -925,7 +1047,14 @@ export function ChessGameClient({
             onSquareClick={handleSquareClick}
           />
           <div className="board-history-actions" aria-label="Управление ходами">
-            <button className="icon-action-button" type="button" disabled={!canUndoFullTurn} onClick={() => undoMoves(2)} aria-label="Назад на ход игрока и ответ Stockfish" title="Назад на ход игрока и ответ Stockfish">
+            <button
+              className="icon-action-button"
+              type="button"
+              disabled={!canUndoFullTurn || undoPending}
+              onClick={() => void handleUndoFullTurn()}
+              aria-label="Назад на ход игрока и ответ Stockfish"
+              title={isSoloMode ? "Назад на ход игрока и ответ Stockfish" : "Назад на ход игрока и ответ Stockfish. Стоимость: " + CAMPAIGN_UNDO_COST_GOLD + " монет"}
+            >
               <Image src={backIconSrc} alt="" width={34} height={34} />
             </button>
             <button className="icon-action-button reset" type="button" onClick={resetPosition} aria-label="Начать заново" title="Начать заново">
@@ -965,10 +1094,17 @@ export function ChessGameClient({
                   <dt><Image className="stat-label-icon" src={difficultyIconSrc} alt="" width={22} height={22} />Звезды</dt>
                   <dd>{cardStars}</dd>
                 </div>
-                <div>
-                  <dt><Image className="stat-label-icon" src={scoreIconSrc} alt="" width={22} height={22} />Награда</dt>
-                  <dd>{rewardScore} очков и {rewardGold} золота</dd>
-                </div>
+                {isSoloMode ? (
+                  <div>
+                    <dt><Image className="stat-label-icon" src={scoreIconSrc} alt="" width={22} height={22} />Режим</dt>
+                    <dd>Без рейтинговых наград. Золото действует только в этой партии.</dd>
+                  </div>
+                ) : (
+                  <div>
+                    <dt><Image className="stat-label-icon" src={scoreIconSrc} alt="" width={22} height={22} />Награда</dt>
+                    <dd>{rewardScore} очков и {rewardGold} золота</dd>
+                  </div>
+                )}
                 <div>
                   <dt><Image className="stat-label-icon" src={gameStateIconSrc} alt="" width={22} height={22} />Настройка движка</dt>
                   <dd>Skill {engineDifficulty.skillLevel} / 20 · Elo ~{engineDifficulty.uciElo} · {engineDifficulty.moveTimeMs} мс</dd>
@@ -1009,9 +1145,11 @@ export function ChessGameClient({
                     <button className="ghost-button secret-engine-button" type="button" disabled={!canAcceptEngineSurrender} onClick={() => acceptEngineSurrender()}>
                       Принять сдачу движка
                     </button>
-                    <button className="ghost-button secret-engine-button" type="button" disabled={secretGoldPending} onClick={() => void handleSecretGoldButton()} aria-label="Добавить 500 монет">
-                      Добавить 500 <Image className="coin-icon" src={coinIconSrc} alt="монеты" width={16} height={16} />
-                    </button>
+                    {!isSoloMode ? (
+                      <button className="ghost-button secret-engine-button" type="button" disabled={secretGoldPending} onClick={() => void handleSecretGoldButton()} aria-label="Добавить 500 монет">
+                        Добавить 500 <Image className="coin-icon" src={coinIconSrc} alt="монеты" width={16} height={16} />
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               ) : null}
@@ -1030,20 +1168,20 @@ export function ChessGameClient({
           </div>
           <div className="victory-dialog-body">
             <p className="engine-error-reason">{engineErrorText}</p>
-            <p>Награда не начислена. Можно вернуться к позиции, начать заново или уйти на карту.</p>
+            <p>Можно вернуться к позиции, начать заново или выйти из битвы.</p>
           </div>
           <div className="dialog-actions engine-error-actions">
             <button className="ghost-button" type="button" onClick={() => setEngineErrorDialogOpen(false)}>К партии</button>
             <button className="ghost-button" type="button" onClick={resetPosition}>Сначала</button>
-            <Link className="primary-action" href="/map">На карту</Link>
+            <Link className="primary-action" href={exitHref}>{exitLabel}</Link>
           </div>
         </dialog>
       ) : null}
 
       {defeatDialogOpen ? (
-        <dialog className="battle-dialog victory-dialog defeat-dialog" open aria-labelledby="defeat-dialog-title">
+        <dialog className="battle-dialog victory-dialog result-dialog defeat-dialog" open aria-labelledby="defeat-dialog-title">
           <div className="victory-art defeat-art">
-            <Image src={defeatedHeroImageSrc} alt="" width={520} height={220} priority />
+            <Image src={defeatedHeroImageSrc} alt="" width={640} height={360} sizes="(max-width: 720px) 92vw, 640px" priority />
           </div>
           <div className="battle-dialog-header">
             <div>
@@ -1053,11 +1191,11 @@ export function ChessGameClient({
           </div>
           <div className="victory-dialog-body">
             <p className="defeat-reason">{defeatReason}</p>
-            <p>Можно вернуться на карту или начать эту битву сначала.</p>
+            <p>Можно выйти из битвы или начать её сначала.</p>
           </div>
           <div className="dialog-actions victory-dialog-actions">
             <button className="ghost-button" type="button" onClick={() => setDefeatDialogOpen(false)}>К доске</button>
-            <Link className="ghost-button" href="/map">Вернуться на карту</Link>
+            <Link className="ghost-button" href={exitHref}>{exitLabel}</Link>
             <button type="button" onClick={resetPosition}>Начать сначала</button>
           </div>
         </dialog>
@@ -1073,47 +1211,56 @@ export function ChessGameClient({
           </div>
           <div className="victory-dialog-body">
             <p className="draw-reason">{drawReason}</p>
-            <p>Можно посмотреть финальную позицию, начать эту битву сначала или вернуться на карту.</p>
+            <p>Можно посмотреть финальную позицию, начать эту битву сначала или выйти.</p>
           </div>
           <div className="dialog-actions victory-dialog-actions">
             <button className="ghost-button" type="button" onClick={() => setDrawDialogOpen(false)}>К доске</button>
             <button className="ghost-button" type="button" onClick={resetPosition}>Начать сначала</button>
-            <Link className="primary-action" href="/map">На карту</Link>
+            <Link className="primary-action" href={exitHref}>{exitLabel}</Link>
           </div>
         </dialog>
       ) : null}
 
       {victoryDialogOpen ? (
-        <dialog className="battle-dialog victory-dialog" open aria-labelledby="victory-dialog-title">
-          <div className="victory-art">
-            <Image src={defeatedEnemyImageSrc} alt="" width={520} height={220} priority />
+        <>
+          <div className="victory-fireworks" aria-hidden="true">
+            <span className="victory-firework firework-left" />
+            <span className="victory-firework firework-center" />
+            <span className="victory-firework firework-right" />
           </div>
-          <div className="battle-dialog-header">
-            <div>
-              <p className="eyebrow">Победа</p>
-              <h2 id="victory-dialog-title">Противник повержен</h2>
+          <dialog className="battle-dialog victory-dialog result-dialog" open aria-labelledby="victory-dialog-title">
+            <div className="victory-art">
+              <Image src={defeatedEnemyImageSrc} alt="" width={640} height={360} sizes="(max-width: 720px) 92vw, 640px" priority />
             </div>
-          </div>
-          <div className="victory-dialog-body">
-            <p className="victory-reason">{victoryReason}</p>
-            <p>{congratulationsText}</p>
-            <dl className="dialog-stats">
+            <div className="battle-dialog-header">
               <div>
-                <dt>Награда</dt>
-                <dd>{rewardScore} очков и {rewardGold} золота</dd>
+                <p className="eyebrow">Победа</p>
+                <h2 id="victory-dialog-title">Противник повержен</h2>
               </div>
-              <div>
-                <dt>Карточка</dt>
-                <dd>{cardTitle}</dd>
+            </div>
+            <div className="victory-dialog-body">
+              <p className="victory-reason">{victoryReason}</p>
+              <p>{congratulationsText}</p>
+            </div>
+            {isSoloMode ? (
+              <div className="dialog-actions victory-dialog-actions">
+                <Link className="primary-action" href={exitHref}>Закрыть и вернуться к настройкам</Link>
               </div>
-            </dl>
-          </div>
-          <form className="dialog-actions victory-dialog-actions" action={completeCardAction}>
-            <input name="cardSlug" type="hidden" value={cardSlug} />
-            <button className="ghost-button" type="button" onClick={() => setVictoryDialogOpen(false)}>Вернуться к партии</button>
-            <button type="submit">Вернуться и получить награды</button>
-          </form>
-        </dialog>
+            ) : completeCardAction ? (
+              <form className="dialog-actions victory-dialog-actions" action={completeCardAction}>
+                <input name="cardSlug" type="hidden" value={cardSlug} />
+                <button className="ghost-button victory-dialog-action" type="button" onClick={() => setVictoryDialogOpen(false)}>
+                  <Image src={backIconSrc} alt="" width={56} height={56} />
+                  <span>Вернуться к партии</span>
+                </button>
+                <button className="victory-dialog-action" type="submit">
+                  <Image src={publicPath("/assets/images/icons/map.png")} alt="" width={56} height={56} />
+                  <span>Завершить и вернуться на карту</span>
+                </button>
+              </form>
+            ) : null}
+          </dialog>
+        </>
       ) : null}
     </>
   );
@@ -1121,11 +1268,11 @@ export function ChessGameClient({
 
 function getMagicPieceIconSrc(upgrade: MagicUpgradeSpec, playerSide: PlayerSide) {
   const color = playerSide === "white" ? "white" : "black";
-  if (upgrade.replacementPiece === "b") return publicPath(`/pieces/default/${color}-bishop.png`);
-  if (upgrade.replacementPiece === "n") return publicPath(`/pieces/default/${color}-knight.png`);
-  if (upgrade.replacementPiece === "r") return publicPath(`/pieces/default/${color}-rook.png`);
-  if (upgrade.replacementPiece === "q") return publicPath(`/pieces/default/${color}-queen.png`);
-  return publicPath(`/pieces/default/${color}-pawn.png`);
+  if (upgrade.replacementPiece === "b") return publicPath(`/assets/images/pieces/default/${color}-bishop.png`);
+  if (upgrade.replacementPiece === "n") return publicPath(`/assets/images/pieces/default/${color}-knight.png`);
+  if (upgrade.replacementPiece === "r") return publicPath(`/assets/images/pieces/default/${color}-rook.png`);
+  if (upgrade.replacementPiece === "q") return publicPath(`/assets/images/pieces/default/${color}-queen.png`);
+  return publicPath(`/assets/images/pieces/default/${color}-pawn.png`);
 }
 
 function countPlayerCaptures(moveHistory: string[]) {
@@ -1193,8 +1340,8 @@ function isCurrentTurnPiece(square: FenBoardSquare, turn: "w" | "b") {
   return turn === "w" ? square.piece.code === square.piece.code.toUpperCase() : square.piece.code === square.piece.code.toLowerCase();
 }
 
-function countPlayerMoves(completedHalfMoves: number) {
-  return Math.ceil(completedHalfMoves / 2);
+function countPlayerMoves(moveHistory: string[]) {
+  return moveHistory.reduce((count, move) => count + (move.includes("(Stockfish)") ? 0 : 1), 0);
 }
 
 function getMoveNotice(chess: Chess, move: Move): GameNotice {

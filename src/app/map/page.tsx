@@ -23,15 +23,15 @@ export default async function MapPage({ searchParams }: MapPageProps) {
   const completedCardSlug = params.completed ? decodeURIComponent(params.completed) : "";
   const mapData = await getQuestMapPageData(user.id, params.map);
   const { current, map, maps, next, previous } = mapData;
-  const stageBackground = publicPath("/wall/stage1.png");
-  const chestIconSrc = publicPath("/wall/1/chest.png");
-  const coinIconSrc = publicPath("/wall/1/coin.png");
-  const mapIconSrc = publicPath("/wall/1/map.png");
-  const objectiveIconSrc = publicPath("/wall/1/objective.png");
-  const previousIconSrc = publicPath("/wall/1/back.png");
-  const nextIconSrc = publicPath("/wall/1/forward.png");
-  const victoryIconSrc = publicPath("/wall/victory.png");
-  const victoryLeafSrc = publicPath("/wall/victory_leaf2.png");
+  const stageBackground = publicPath("/assets/images/backgrounds/stage-1.png");
+  const chestIconSrc = publicPath("/assets/images/icons/chest.png");
+  const coinIconSrc = publicPath("/assets/images/icons/coin.png");
+  const mapIconSrc = publicPath("/assets/images/icons/map.png");
+  const objectiveIconSrc = publicPath("/assets/images/icons/objective.png");
+  const previousIconSrc = publicPath("/assets/images/icons/back.png");
+  const nextIconSrc = publicPath("/assets/images/icons/forward.png");
+  const victoryIconSrc = publicPath("/assets/images/map/victory.png");
+  const victoryLeafSrc = publicPath("/assets/images/map/victory-leaf.png");
   const isMapCompleted = map.completedCards === map.cards.length;
   const showMapUnlockedMessage = Boolean(completedCardSlug && isMapCompleted && next?.isUnlocked);
 

@@ -5,6 +5,7 @@ import {redirect} from "next/navigation";
 import {ensureDatabaseUser} from "@/lib/auth/database-user";
 import {getCurrentUser} from "@/lib/auth/session";
 import {getMagicUpgradeById} from "@/lib/quest/magic-upgrades";
+import {CAMPAIGN_UNDO_COST_GOLD} from "@/lib/quest/game-costs";
 import {grantUserGold, markCardVictory, type SpendGoldResult, spendUserGold} from "@/lib/quest/progress-store";
 import {getGameCardById} from "@/lib/quest/quest-data";
 
@@ -51,6 +52,25 @@ export async function spendMagicGoldAction(formData: FormData): Promise<SpendMag
       error: "Не хватает монет для этой магии.",
     };
   }
+
+  return result;
+}
+
+export async function spendUndoGoldAction(): Promise<SpendMagicGoldResult> {
+  const user = await getCurrentUser();
+  if (!user) return { availableGold: 0, error: "Зарегистрируйтесь или войдите, чтобы отменить ход.", ok: false };
+
+  await ensureDatabaseUser(user);
+  const result = await spendUserGold(user.id, CAMPAIGN_UNDO_COST_GOLD);
+  if (!result.ok) {
+    return {
+      ...result,
+      error: "Не хватает монет, чтобы отменить ход.",
+    };
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/map");
 
   return result;
 }

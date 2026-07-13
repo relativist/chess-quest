@@ -20,6 +20,12 @@
   --quest-wood-dark: #1f120b;
   --quest-parchment: #fff4d8;
   --quest-shadow: 0 28px 70px rgba(24, 13, 6, 0.36);
+  --action-button-background: linear-gradient(180deg, rgba(255, 250, 235, 0.98), rgba(236, 207, 151, 0.96));
+  --action-button-background-hover: linear-gradient(180deg, #fff8e8, #e8c887);
+  --action-button-border: rgba(201, 139, 37, 0.46);
+  --action-button-color: var(--gold-dark);
+  --action-button-shadow: 0 8px 18px rgba(74, 42, 20, 0.16);
+  --action-button-shadow-hover: 0 0 0 3px rgba(201, 139, 37, 0.14), 0 10px 24px rgba(74, 42, 20, 0.2);
 }
 
 html,
@@ -259,7 +265,10 @@ button,
 }
 
 .nav-button {
-  background: white;
+  background: var(--action-button-background);
+  border-color: var(--action-button-border);
+  box-shadow: var(--action-button-shadow);
+  color: var(--action-button-color);
   display: inline-flex;
 }
 
@@ -449,6 +458,47 @@ button,
   gap: 8px;
 }
 
+.battle-heading-top-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.battle-heading-top-row .battle-heading-title {
+  flex: 1 1 auto;
+}
+
+.battle-heading-back {
+  align-items: center;
+  background: rgba(255, 250, 235, 0.7);
+  border: 1px solid rgba(201, 139, 37, 0.36);
+  border-radius: 999px;
+  display: inline-flex;
+  flex: 0 0 58px;
+  height: 58px;
+  justify-content: center;
+  padding: 3px;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  width: 58px;
+}
+
+.battle-heading-back img {
+  display: block;
+  height: 52px;
+  object-fit: contain;
+  width: 52px;
+}
+
+.battle-heading-back:hover,
+.battle-heading-back:focus-visible {
+  background: rgba(255, 248, 224, 0.94);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201, 139, 37, 0.14), 0 8px 18px rgba(74, 42, 20, 0.16);
+  outline: none;
+  transform: translateY(-1px);
+}
+
 .battle-heading-title {
   align-items: center;
   display: flex;
@@ -468,6 +518,7 @@ button,
   font-size: clamp(28px, 4vw, 44px);
   margin: 0;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .battle-heading-copy,
@@ -480,6 +531,18 @@ button,
 
 .battle-heading-objective {
   color: #2f7d52;
+}
+
+.battle-heading-objective-progress {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: space-between;
+}
+
+.battle-heading-objective-progress strong {
+  color: var(--gold-dark);
 }
 
 .auth-panel {
@@ -646,27 +709,30 @@ h2 {
 
 button,
 .primary-action {
-  background: var(--green);
-  border: 1px solid var(--green);
-  color: white;
+  background: var(--action-button-background);
+  border: 1px solid var(--action-button-border);
+  box-shadow: var(--action-button-shadow);
+  color: var(--action-button-color);
   display: inline-flex;
   justify-content: center;
   padding: 12px 16px;
 }
 
 .ghost-button {
-  background: white;
+  background: var(--action-button-background);
+  border-color: var(--action-button-border);
+  box-shadow: var(--action-button-shadow);
+  color: var(--action-button-color);
 }
 
 .auth-submit-button {
   align-items: center;
-  background: linear-gradient(180deg, #d99b2f, #8b531a);
-  border-color: rgba(95, 57, 19, 0.78);
-  box-shadow: 0 12px 24px rgba(96, 55, 19, 0.24), inset 0 1px 0 rgba(255, 239, 184, 0.62);
-  color: #fff7df;
+  background: var(--action-button-background);
+  border-color: var(--action-button-border);
+  box-shadow: var(--action-button-shadow);
+  color: var(--action-button-color);
   gap: 10px;
   min-height: 56px;
-  text-shadow: 0 1px 0 rgba(47, 27, 10, 0.44);
   width: 100%;
 }
 
@@ -677,8 +743,9 @@ button,
 
 .auth-submit-button:hover,
 .auth-submit-button:focus-visible {
-  background: linear-gradient(180deg, #e7ac3e, #774514);
-  border-color: rgba(66, 38, 13, 0.88);
+  background: var(--action-button-background-hover);
+  border-color: var(--gold);
+  box-shadow: var(--action-button-shadow-hover);
   outline: 2px solid rgba(201, 139, 37, 0.34);
   outline-offset: 2px;
 }
@@ -697,9 +764,9 @@ button,
 }
 
 .demo-login-button {
-  background: var(--surface);
-  border-color: var(--green);
-  color: var(--green-dark);
+  background: var(--action-button-background);
+  border-color: var(--action-button-border);
+  color: var(--action-button-color);
   width: 100%;
 }
 
@@ -733,59 +800,80 @@ button,
 }
 
 .quest-card {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(216, 223, 209, 0.94);
+  background:
+    radial-gradient(circle at 16% 8%, rgba(255, 255, 255, 0.74), transparent 34%),
+    linear-gradient(180deg, rgba(255, 250, 237, 0.98), rgba(246, 228, 190, 0.96));
+  border: 1px solid rgba(245, 211, 136, 0.9);
   border-radius: 8px;
-  box-shadow: 0 10px 28px rgba(37, 48, 71, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 14px 32px rgba(74, 42, 20, 0.24);
   color: var(--ink);
   cursor: pointer;
   display: grid;
   gap: 8px;
   max-width: 520px;
   min-height: 178px;
-  padding: 18px;
-  padding-right: 18px;
+  padding: 20px;
   position: relative;
   text-decoration: none;
-  transition: border-color 180ms ease, box-shadow 180ms ease, filter 180ms ease, transform 180ms ease;
+  transition: border-color 200ms ease, box-shadow 200ms ease, filter 200ms ease, transform 200ms ease;
   width: min(100%, 520px);
+  z-index: 1;
+}
+
+.quest-card::before {
+  border: 1px solid rgba(122, 83, 19, 0.22);
+  border-radius: 6px;
+  content: "";
+  inset: 8px;
+  pointer-events: none;
+  position: absolute;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
   z-index: 1;
 }
 
 .quest-card:hover,
 .quest-card:focus-visible {
-  border-color: rgba(255, 157, 35, 0.95);
+  border-color: rgba(255, 205, 82, 0.98);
   box-shadow:
-    0 0 0 4px rgba(255, 153, 36, 0.22),
-    0 16px 34px rgba(112, 48, 12, 0.24);
-  filter: saturate(1.05);
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 0 0 4px rgba(255, 190, 54, 0.24),
+    0 0 32px rgba(255, 174, 30, 0.34),
+    0 20px 42px rgba(74, 42, 20, 0.3);
+  filter: saturate(1.08) brightness(1.025);
   outline: none;
-  transform: translateY(-2px);
+  transform: translateY(-4px);
 }
 
+.quest-card:hover::before,
+.quest-card:focus-visible::before {
+  border-color: rgba(184, 117, 16, 0.42);
+  box-shadow: inset 0 0 18px rgba(255, 213, 108, 0.14);
+}
 
 .quest-card.locked {
-  background: rgba(255, 255, 255, 0.94);
-  border-color: #c7cfc2;
+  border-color: rgba(224, 188, 111, 0.9);
 }
 
 .quest-card.completed {
   background:
-    linear-gradient(135deg, rgba(151, 222, 166, 0.98), rgba(190, 241, 201, 0.96) 42%, rgba(112, 199, 139, 0.98)),
-    radial-gradient(circle at 18% 12%, rgba(232, 255, 237, 0.9), transparent 36%);
-  border: 2px solid rgba(44, 142, 77, 0.98);
+    radial-gradient(circle at 16% 8%, rgba(255, 255, 255, 0.78), transparent 34%),
+    linear-gradient(180deg, rgba(246, 241, 201, 0.98), rgba(188, 211, 157, 0.97));
+  border: 2px solid rgba(72, 116, 65, 0.92);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.66),
-    0 0 0 4px rgba(58, 169, 92, 0.28),
-    0 14px 32px rgba(23, 94, 51, 0.22);
+    inset 6px 0 0 rgba(59, 109, 63, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.74),
+    0 0 0 3px rgba(65, 122, 68, 0.15),
+    0 14px 32px rgba(51, 76, 35, 0.24);
 }
 
 .quest-card.just-completed {
-  border-color: var(--green);
+  border-color: rgba(73, 128, 61, 0.94);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.88),
-    0 0 0 5px rgba(44, 124, 84, 0.24),
-    0 16px 34px rgba(37, 48, 71, 0.2);
+    0 0 0 4px rgba(73, 128, 61, 0.22),
+    0 16px 36px rgba(51, 76, 35, 0.26);
 }
 
 .quest-card.just-completed .card-status {
@@ -802,18 +890,22 @@ button,
   color: var(--green-dark);
 }
 
-
 .card-stars {
-  color: #c94132;
+  box-sizing: border-box;
+  color: #d99b1f;
   display: block;
   font-size: 30px;
   font-weight: 900;
   letter-spacing: 2px;
   line-height: 1;
   min-height: 34px;
-  box-sizing: border-box;
   padding-right: 96px;
-  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.72), 0 8px 18px rgba(107, 36, 29, 0.18);
+  text-shadow:
+    0 1px 0 #fff4bd,
+    0 2px 0 rgba(139, 86, 9, 0.72),
+    0 5px 10px rgba(122, 83, 19, 0.26);
+  transform-origin: left center;
+  transition: color 180ms ease, filter 180ms ease, text-shadow 180ms ease, transform 180ms ease;
   white-space: nowrap;
 }
 
@@ -825,11 +917,10 @@ button,
   line-height: 1.12;
 }
 
-
 .card-reward-badge {
   align-items: center;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(232, 181, 76, 0.8);
+  background: rgba(255, 248, 225, 0.94);
+  border: 1px solid rgba(201, 139, 37, 0.62);
   border-radius: 999px;
   box-shadow: 0 8px 18px rgba(112, 78, 18, 0.16);
   color: var(--gold-dark);
@@ -843,28 +934,17 @@ button,
   position: absolute;
   right: 14px;
   top: 14px;
-  z-index: 1;
+  z-index: 2;
 }
 
 .quest-card.completed .card-stars,
 .quest-card.just-completed .card-stars {
-  color: var(--green-dark);
-  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.72), 0 8px 18px rgba(34, 106, 65, 0.2);
+  color: #d99b1f;
+  text-shadow:
+    0 1px 0 #fff4bd,
+    0 2px 0 rgba(139, 86, 9, 0.72),
+    0 5px 10px rgba(122, 83, 19, 0.26);
 }
-
-.quest-card:hover .card-stars,
-.quest-card:focus-visible .card-stars {
-  color: #f06d23;
-  transform: translateY(-1px) scale(1.03);
-}
-
-.quest-card.completed:hover .card-stars,
-.quest-card.completed:focus-visible .card-stars,
-.quest-card.just-completed:hover .card-stars,
-.quest-card.just-completed:focus-visible .card-stars {
-  color: #207a46;
-}
-
 
 
 .card-stats,
@@ -1228,6 +1308,19 @@ dd {
 
 .leaderboard-dialog {
   max-width: min(760px, calc(100vw - 32px));
+}
+
+.leaderboard-back-button {
+  align-items: center;
+  display: inline-flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.leaderboard-back-button img {
+  height: 42px;
+  object-fit: contain;
+  width: 42px;
 }
 
 .leaderboard-list {
@@ -1683,6 +1776,10 @@ dd {
   z-index: 40;
 }
 
+.victory-dialog.result-dialog {
+  max-width: min(680px, calc(100vw - 32px));
+}
+
 .victory-dialog::backdrop {
   background: rgba(23, 32, 24, 0.52);
 }
@@ -1691,16 +1788,115 @@ dd {
   background: transparent;
   border-bottom: 1px solid var(--line);
   display: grid;
-  max-height: 240px;
+  max-height: 380px;
   overflow: hidden;
   place-items: center;
 }
 
 .victory-art img {
   display: block;
-  height: min(220px, 42vw);
+  height: min(360px, 52vw);
   object-fit: contain;
   width: 100%;
+}
+
+.victory-fireworks {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: fixed;
+  z-index: 41;
+}
+
+.victory-firework,
+.victory-firework::before,
+.victory-firework::after {
+  animation: victory-firework-burst 1.8s ease-out infinite;
+  border-radius: 50%;
+  height: 7px;
+  position: absolute;
+  width: 7px;
+}
+
+.victory-firework {
+  color: #ffd84d;
+  left: 18%;
+  top: 30%;
+}
+
+.victory-firework::before,
+.victory-firework::after {
+  content: "";
+  inset: 0;
+}
+
+.victory-firework::before {
+  animation-delay: 0.55s;
+  color: #ff6b6b;
+  transform: translate(210%, 420%);
+}
+
+.victory-firework::after {
+  animation-delay: 1.1s;
+  color: #66e3ff;
+  transform: translate(470%, 90%);
+}
+
+.victory-firework.firework-center {
+  animation-delay: 0.45s;
+  color: #8cff72;
+  left: 49%;
+  top: 17%;
+}
+
+.victory-firework.firework-right {
+  animation-delay: 0.9s;
+  color: #ff8ce8;
+  left: 80%;
+  top: 34%;
+}
+
+@keyframes victory-firework-burst {
+  0% {
+    box-shadow: 0 0 currentColor;
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  12% {
+    opacity: 1;
+  }
+  72% {
+    box-shadow:
+      0 -90px 0 -1px currentColor,
+      64px -64px 0 -1px currentColor,
+      90px 0 0 -1px currentColor,
+      64px 64px 0 -1px currentColor,
+      0 90px 0 -1px currentColor,
+      -64px 64px 0 -1px currentColor,
+      -90px 0 0 -1px currentColor,
+      -64px -64px 0 -1px currentColor;
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    box-shadow:
+      0 -118px 0 -3px currentColor,
+      84px -84px 0 -3px currentColor,
+      118px 0 0 -3px currentColor,
+      84px 84px 0 -3px currentColor,
+      0 118px 0 -3px currentColor,
+      -84px 84px 0 -3px currentColor,
+      -118px 0 0 -3px currentColor,
+      -84px -84px 0 -3px currentColor;
+    opacity: 0;
+    transform: scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .victory-fireworks {
+    display: none;
+  }
 }
 
 .victory-dialog-body {
@@ -1737,6 +1933,20 @@ dd {
 
 .victory-dialog-actions {
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+}
+
+.battle-stage-page .victory-dialog-action {
+  align-items: center;
+  display: inline-flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.battle-stage-page .victory-dialog-action img {
+  flex: 0 0 56px;
+  height: 56px;
+  object-fit: contain;
+  width: 56px;
 }
 
 .rules-panel {
@@ -2273,9 +2483,9 @@ dd {
 }
 
 .editor-background-page .editor-card-list .add-card-button {
-  background: var(--green);
-  border-color: var(--green);
-  color: white;
+  background: var(--action-button-background);
+  border-color: var(--action-button-border);
+  color: var(--action-button-color);
 }
 
 .editor-background-page .editor-card-list .add-card-button,
@@ -2314,9 +2524,10 @@ dd {
 }
 
 .editor-card-list .add-card-button {
-  background: var(--green);
-  border-color: var(--green);
-  color: white;
+  background: var(--action-button-background);
+  border-color: var(--action-button-border);
+  box-shadow: var(--action-button-shadow);
+  color: var(--action-button-color);
   display: inline-flex;
   justify-content: center;
 }
@@ -2649,7 +2860,10 @@ dd {
 .fen-piece-palette .fen-test-move-button,
 .fen-piece-palette .fen-test-back-button {
   aspect-ratio: auto;
-  color: white;
+  background: var(--action-button-background);
+  border-color: var(--action-button-border);
+  box-shadow: var(--action-button-shadow);
+  color: var(--action-button-color);
   font-weight: 800;
   grid-column: 1 / -1;
   min-height: 78px;
@@ -2661,14 +2875,6 @@ dd {
   height: 56px;
   object-fit: contain;
   width: 56px;
-}
-
-.fen-piece-palette .fen-test-move-button {
-  background: var(--green);
-}
-
-.fen-piece-palette .fen-test-back-button {
-  background: var(--ink);
 }
 
 .fen-piece-palette .fen-test-move-button:disabled,
@@ -3028,10 +3234,18 @@ dd {
 }
 
 .magic-upgrade.affordable:not(:disabled):hover,
-.ghost-button:not(:disabled):hover,
 .icon-action-button:not(:disabled):hover {
   border-color: rgba(47, 125, 82, 0.62);
   box-shadow: 0 0 0 4px rgba(47, 125, 82, 0.14), 0 10px 24px rgba(37, 48, 71, 0.14);
+  transform: translateY(-1px);
+}
+
+.ghost-button:not(:disabled):hover,
+.ghost-button:not(:disabled):focus-visible {
+  background: var(--action-button-background-hover);
+  border-color: var(--gold);
+  box-shadow: var(--action-button-shadow-hover);
+  color: var(--action-button-color);
   transform: translateY(-1px);
 }
 
@@ -3370,8 +3584,8 @@ dd {
 .editor-card-list button:not(:disabled):focus-visible,
 .add-card-button:not(:disabled):hover,
 .add-card-button:not(:disabled):focus-visible {
-  border-color: rgba(47, 125, 82, 0.72);
-  box-shadow: 0 0 0 4px rgba(47, 125, 82, 0.16), 0 10px 24px rgba(37, 48, 71, 0.14);
+  border-color: var(--gold);
+  box-shadow: var(--action-button-shadow-hover);
   transform: translateY(-1px);
 }
 
@@ -3381,8 +3595,9 @@ dd {
 .dialog-actions button:not(:disabled):focus-visible,
 .victory-form button:not(:disabled):hover,
 .victory-form button:not(:disabled):focus-visible {
-  background: linear-gradient(135deg, var(--green), #46a968);
-  color: white;
+  background: var(--action-button-background-hover);
+  color: var(--action-button-color);
+  box-shadow: var(--action-button-shadow-hover);
 }
 
 .nav-button:not(:disabled):hover,
@@ -3397,8 +3612,9 @@ dd {
 .editor-card-list button:not(:disabled):focus-visible,
 .add-card-button:not(:disabled):hover,
 .add-card-button:not(:disabled):focus-visible {
-  background: rgba(234, 247, 237, 0.96);
-  color: var(--green-dark);
+  background: var(--action-button-background-hover);
+  color: var(--action-button-color);
+  box-shadow: var(--action-button-shadow-hover);
 }
 
 
@@ -3409,13 +3625,15 @@ dd {
 .quest-card.completed:focus-visible,
 .quest-card.just-completed:hover,
 .quest-card.just-completed:focus-visible {
-  border-color: rgba(255, 157, 35, 0.95);
+  border-color: rgba(255, 205, 82, 0.98);
   box-shadow:
-    0 0 0 4px rgba(255, 153, 36, 0.22),
-    0 16px 34px rgba(112, 48, 12, 0.24);
-  filter: saturate(1.05);
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 0 0 4px rgba(255, 190, 54, 0.24),
+    0 0 32px rgba(255, 174, 30, 0.34),
+    0 20px 42px rgba(74, 42, 20, 0.3);
+  filter: saturate(1.08) brightness(1.025);
   outline: none;
-  transform: translateY(-2px);
+  transform: translateY(-4px);
 }
 
 /* Battle layout: left magic rail and non-layout status dialog. */
@@ -3716,7 +3934,7 @@ dd {
 }
 
 
-/* Wall/1 asset pass: map summaries, card facts, and battle status icons. */
+/* Asset icon pass: map summaries, card facts, and battle status icons. */
 .map-progress-summary {
   display: grid;
   gap: 10px;
@@ -3805,8 +4023,8 @@ dd {
 
 .card-facts > span {
   align-items: center;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(216, 223, 209, 0.82);
+  background: rgba(255, 248, 225, 0.88);
+  border: 1px solid rgba(201, 139, 37, 0.34);
   border-radius: 999px;
   color: var(--ink);
   display: inline-flex;
@@ -4037,4 +4255,294 @@ dd {
   .auth-panel {
     max-width: none;
   }
+}
+
+/* Unified parchment theme for map and battle surfaces. */
+.stage-map-page,
+.battle-stage-page {
+  --quest-panel:
+    radial-gradient(circle at 14% 6%, rgba(255, 255, 255, 0.7), transparent 34%),
+    linear-gradient(180deg, rgba(255, 250, 237, 0.97), rgba(246, 228, 190, 0.95));
+  --quest-panel-soft: rgba(255, 247, 224, 0.9);
+  --quest-panel-border: rgba(220, 174, 83, 0.82);
+  --quest-panel-inner: rgba(122, 83, 19, 0.2);
+  --quest-panel-shadow: 0 18px 42px rgba(50, 29, 13, 0.26);
+}
+
+.stage-map-page > .page-heading,
+.battle-stage-page .battle-heading,
+.battle-stage-page .game-board-area,
+.battle-stage-page .rules-panel,
+.battle-stage-page .magic-preview,
+.battle-stage-page .player-clock {
+  background: var(--quest-panel);
+  border-color: var(--quest-panel-border);
+  box-shadow:
+    inset 0 0 0 1px var(--quest-panel-inner),
+    var(--quest-panel-shadow);
+}
+
+.stage-map-page > .page-heading {
+  padding: 22px;
+}
+
+.stage-map-page .map-switcher-button {
+  background: linear-gradient(180deg, #fff8e8, #eed09a);
+  border-color: rgba(201, 139, 37, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.66);
+  color: var(--gold-dark);
+}
+
+.stage-map-page .map-switcher-button:not(.disabled):hover,
+.stage-map-page .map-switcher-button:not(.disabled):focus-visible {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 4px rgba(201, 139, 37, 0.16), 0 8px 20px rgba(74, 42, 20, 0.18);
+  outline: none;
+}
+
+.stage-map-page .progress-track {
+  background: rgba(122, 83, 19, 0.18);
+  border: 1px solid rgba(122, 83, 19, 0.28);
+  box-shadow: inset 0 2px 4px rgba(74, 42, 20, 0.14);
+  height: 12px;
+}
+
+.stage-map-page .progress-track span {
+  background: linear-gradient(90deg, #a96a1e, #e2aa32, #f2c64c);
+  box-shadow: inset 0 1px 0 rgba(255, 244, 189, 0.72);
+}
+
+.stage-map-page .map-progress-summary div,
+.stage-map-page .card-facts > span {
+  background: var(--quest-panel-soft);
+  border-color: rgba(201, 139, 37, 0.38);
+}
+
+.stage-map-page .map-unlocked-dialog.battle-dialog[open],
+.stage-map-page .map-unlocked-dialog .battle-dialog-header,
+.stage-map-page .map-unlocked-dialog .map-unlocked-message,
+.stage-map-page .map-unlocked-dialog .dialog-actions {
+  background: transparent;
+}
+
+.stage-map-page .map-unlocked-dialog.battle-dialog[open] {
+  background: var(--quest-panel);
+  border-color: var(--quest-panel-border);
+  box-shadow:
+    inset 0 0 0 1px var(--quest-panel-inner),
+    0 28px 80px rgba(36, 20, 9, 0.38);
+}
+
+.stage-map-page .map-unlocked-dialog .battle-dialog-header,
+.stage-map-page .map-unlocked-dialog .map-unlocked-message,
+.stage-map-page .map-unlocked-dialog .dialog-actions {
+  border-color: rgba(122, 83, 19, 0.22);
+}
+
+.quest-card:hover,
+.quest-card:focus-visible,
+.quest-card.locked:hover,
+.quest-card.locked:focus-visible,
+.quest-card.completed:hover,
+.quest-card.completed:focus-visible,
+.quest-card.just-completed:hover,
+.quest-card.just-completed:focus-visible {
+  border-color: rgba(218, 166, 61, 0.96);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 0 0 2px rgba(201, 139, 37, 0.16),
+    0 17px 36px rgba(74, 42, 20, 0.28);
+  filter: saturate(1.04);
+  transform: translateY(-2px);
+}
+
+.quest-card:hover .card-stars,
+.quest-card:focus-visible .card-stars {
+  color: #d99b1f;
+  filter: none;
+  text-shadow:
+    0 1px 0 #fff4bd,
+    0 2px 0 rgba(139, 86, 9, 0.72),
+    0 5px 10px rgba(122, 83, 19, 0.26);
+  transform: none;
+}
+
+.battle-stage-page .battle-heading {
+  padding: 16px 20px;
+}
+
+.battle-stage-page .battle-heading-objective,
+.battle-stage-page .battle-description summary {
+  color: var(--gold-dark);
+}
+
+.battle-stage-page .game-board-area {
+  padding: 14px;
+}
+
+.battle-stage-page .board-controls select {
+  background: rgba(255, 250, 235, 0.94);
+  border-color: rgba(122, 83, 19, 0.3);
+  box-shadow: inset 0 2px 0 rgba(93, 54, 28, 0.06);
+  color: var(--ink);
+}
+
+.battle-stage-page .board-controls select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 4px rgba(201, 139, 37, 0.16), inset 0 2px 0 rgba(93, 54, 28, 0.06);
+  outline: none;
+}
+
+.battle-stage-page .magic-upgrade,
+.battle-stage-page .rules-stats div,
+.battle-stage-page .move-history,
+.battle-stage-page .engine-controls {
+  background: var(--quest-panel-soft);
+  border-color: rgba(201, 139, 37, 0.34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.54);
+}
+
+.battle-stage-page .magic-upgrade.affordable {
+  border-color: rgba(201, 139, 37, 0.56);
+}
+
+.battle-stage-page .magic-upgrade.active {
+  border-color: var(--gold);
+  box-shadow: inset 0 0 0 2px rgba(201, 139, 37, 0.46), 0 8px 18px rgba(122, 83, 19, 0.18);
+}
+
+.battle-stage-page .magic-price {
+  background: rgba(255, 244, 205, 0.92);
+  border-color: rgba(201, 139, 37, 0.48);
+}
+
+.battle-stage-page .game-notice {
+  border-color: rgba(122, 83, 19, 0.2);
+}
+
+.battle-stage-page .game-notice.info {
+  background: rgba(239, 219, 177, 0.72);
+}
+
+.battle-stage-page .game-notice.success {
+  background: rgba(225, 232, 184, 0.8);
+}
+
+.battle-stage-page .ghost-button,
+.battle-stage-page .icon-action-button,
+.battle-stage-page .status-dialog-button.icon-only,
+.battle-stage-page .board-history-actions .icon-action-button {
+  background: var(--action-button-background);
+  border-color: var(--action-button-border);
+  box-shadow: var(--action-button-shadow);
+  color: var(--action-button-color);
+}
+
+.battle-stage-page .ghost-button:not(:disabled):hover,
+.battle-stage-page .ghost-button:not(:disabled):focus-visible,
+.battle-stage-page .icon-action-button:not(:disabled):hover,
+.battle-stage-page .icon-action-button:not(:disabled):focus-visible,
+.battle-stage-page .status-dialog-button.icon-only:not(:disabled):hover,
+.battle-stage-page .status-dialog-button.icon-only:not(:disabled):focus-visible,
+.battle-stage-page .board-history-actions .icon-action-button:not(:disabled):hover,
+.battle-stage-page .board-history-actions .icon-action-button:not(:disabled):focus-visible,
+.battle-stage-page .magic-upgrade.affordable:not(:disabled):hover,
+.battle-stage-page .magic-upgrade.affordable:not(:disabled):focus-visible {
+  background: var(--action-button-background-hover);
+  border-color: var(--gold);
+  box-shadow: var(--action-button-shadow-hover);
+  color: var(--action-button-color);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.battle-stage-page .battle-dialog {
+  background: var(--quest-panel);
+  border-color: var(--quest-panel-border);
+  box-shadow:
+    inset 0 0 0 1px var(--quest-panel-inner),
+    0 28px 80px rgba(36, 20, 9, 0.42);
+}
+
+.battle-stage-page .battle-dialog-header,
+.battle-stage-page .dialog-actions,
+.battle-stage-page .victory-art {
+  border-color: rgba(122, 83, 19, 0.24);
+}
+
+.battle-stage-page .dialog-actions {
+  background: rgba(237, 216, 173, 0.32);
+}
+
+.battle-stage-page .dialog-stats div {
+  background: var(--quest-panel-soft);
+  border-color: rgba(201, 139, 37, 0.36);
+}
+
+.battle-stage-page .dialog-actions button:not(.ghost-button),
+.battle-stage-page .dialog-actions .primary-action,
+.stage-map-page .map-unlocked-dialog .primary-action {
+  background: var(--action-button-background);
+  border-color: var(--action-button-border);
+  box-shadow: var(--action-button-shadow);
+  color: var(--action-button-color);
+}
+
+.battle-stage-page .dialog-actions button:not(.ghost-button):hover,
+.battle-stage-page .dialog-actions button:not(.ghost-button):focus-visible,
+.battle-stage-page .dialog-actions .primary-action:hover,
+.battle-stage-page .dialog-actions .primary-action:focus-visible,
+.stage-map-page .map-unlocked-dialog .primary-action:hover,
+.stage-map-page .map-unlocked-dialog .primary-action:focus-visible {
+  background: var(--action-button-background-hover);
+  border-color: var(--gold);
+  box-shadow: var(--action-button-shadow-hover);
+  color: var(--action-button-color);
+}
+
+@media (max-width: 520px) {
+  .stage-map-page > .page-heading {
+    padding: 18px;
+  }
+
+  .battle-stage-page .battle-heading,
+  .battle-stage-page .game-board-area {
+    padding: 12px;
+  }
+}
+
+/* Completed map cards stay available for replay, but read as inactive. */
+.stage-map-page .quest-card.completed,
+.stage-map-page .quest-card.just-completed,
+.stage-map-page .quest-card.completed:hover,
+.stage-map-page .quest-card.completed:focus-visible,
+.stage-map-page .quest-card.just-completed:hover,
+.stage-map-page .quest-card.just-completed:focus-visible {
+  background:
+    radial-gradient(circle at 16% 8%, rgba(255, 255, 255, 0.5), transparent 34%),
+    linear-gradient(180deg, rgba(218, 218, 214, 0.97), rgba(174, 176, 172, 0.96));
+  border-color: rgba(105, 108, 103, 0.72);
+  box-shadow:
+    inset 5px 0 0 rgba(84, 87, 83, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.48),
+    0 8px 20px rgba(42, 43, 41, 0.18);
+  filter: grayscale(0.88) saturate(0.3);
+  opacity: 0.76;
+  transform: none;
+}
+
+.stage-map-page .quest-card.completed::before,
+.stage-map-page .quest-card.just-completed::before,
+.stage-map-page .quest-card.completed:hover::before,
+.stage-map-page .quest-card.completed:focus-visible::before,
+.stage-map-page .quest-card.just-completed:hover::before,
+.stage-map-page .quest-card.just-completed:focus-visible::before {
+  border-color: rgba(83, 86, 81, 0.24);
+  box-shadow: none;
+}
+
+.stage-map-page .quest-card.completed:focus-visible,
+.stage-map-page .quest-card.just-completed:focus-visible {
+  outline: 3px solid rgba(84, 87, 83, 0.72);
+  outline-offset: 3px;
 }

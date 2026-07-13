@@ -1,6 +1,7 @@
 import {describe, expect, it} from "vitest";
 import {STARTING_FEN} from "@/lib/chess/fen-validation";
 import {fenToBoardSquares} from "@/lib/chess/fen-board";
+import {demoMapSeed} from "@/lib/demo-seed";
 import {getCurrentQuestMap, getGameCardById, getQuestMapPageData} from "./quest-data";
 
 describe("quest-data", () => {
@@ -8,12 +9,12 @@ describe("quest-data", () => {
     const map = await getCurrentQuestMap();
 
     expect(map.cards).toHaveLength(5);
-    expect(map.maxScore).toBe(2500);
-    expect(map.earnedScore).toBe(100);
-    expect(map.earnedGold).toBe(100);
+    expect(map.maxScore).toBe(2300);
+    expect(map.earnedScore).toBe(0);
+    expect(map.earnedGold).toBe(0);
     expect(map.playerGold).toBe(0);
-    expect(map.completedCards).toBe(1);
-    expect(map.totalWins).toBe(1);
+    expect(map.completedCards).toBe(0);
+    expect(map.totalWins).toBe(0);
     expect(map.canOpenNextMap).toBe(false);
   });
 
@@ -25,20 +26,26 @@ describe("quest-data", () => {
       "forest-tactics-trail",
       "desert-endgame-road",
       "citadel-checkmate-ascent",
+      "holmy-darloga",
     ]);
   });
 
-  it("returns standard setup data for the first card", async () => {
+  it("returns the exported FEN for the first card", async () => {
     const card = await getGameCardById("opening-gate");
 
-    expect(card).toMatchObject({ usesStandardSetup: true, startingFen: STARTING_FEN, sideToMove: "white" });
+    expect(card).toMatchObject({
+      usesStandardSetup: false,
+      startingFen: demoMapSeed.cards[0].startingFen,
+      sideToMove: "white",
+    });
   });
 
-  it("returns FEN template data for a positioned card", async () => {
+  it("returns exported FEN data for a positioned card", async () => {
     const card = await getGameCardById("queen-pressure");
+    const seedCard = demoMapSeed.cards.find((candidate) => candidate.slug === "queen-pressure");
 
     expect(card?.usesStandardSetup).toBe(false);
-    expect(card?.startingFen).toContain("3q4");
+    expect(card?.startingFen).toBe(seedCard?.startingFen);
   });
 
   it("renders 64 squares from a FEN", () => {

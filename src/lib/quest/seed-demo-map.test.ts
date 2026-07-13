@@ -21,6 +21,7 @@ describe("seed demo maps", () => {
             "forest-tactics-trail",
             "desert-endgame-road",
             "citadel-checkmate-ascent",
+            "holmy-darloga",
           ],
         },
       },
@@ -30,8 +31,8 @@ describe("seed demo maps", () => {
     expect(update.mock.calls.map((call) => call[0])).toEqual([
       { where: { id: "custom-a" }, data: { order: -100000 } },
       { where: { id: "custom-b" }, data: { order: -100001 } },
-      { where: { id: "custom-a" }, data: { order: 5 } },
-      { where: { id: "custom-b" }, data: { order: 6 } },
+      { where: { id: "custom-a" }, data: { order: 6 } },
+      { where: { id: "custom-b" }, data: { order: 7 } },
     ]);
   });
 });

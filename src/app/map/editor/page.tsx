@@ -31,7 +31,7 @@ export default async function MapEditorPage({ searchParams }: MapEditorPageProps
     initialFen: resolveCardStartingFen(card, map),
   }));
 
-  const editorBackground = publicPath("/wall/editor.png");
+  const editorBackground = publicPath("/assets/images/backgrounds/editor.png");
 
   return (
     <section className="map-page editor-background-page" style={{ "--editor-background": `url(${editorBackground})` } as React.CSSProperties}>

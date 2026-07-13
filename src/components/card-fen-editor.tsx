@@ -42,22 +42,22 @@ type FenEditorTool = "erase" | "K" | "Q" | "R" | "B" | "N" | "P" | "k" | "q" | "
 
 const FEN_EDITOR_TOOLS: Array<{ alt: string; code: FenEditorTool; imageSrc?: string; label: string }> = [
   { alt: "Убрать фигуру", code: "erase", label: "×" },
-  { alt: "Белый король", code: "K", imageSrc: publicPath("/pieces/default/white-king.png"), label: "♔" },
-  { alt: "Белый ферзь", code: "Q", imageSrc: publicPath("/pieces/default/white-queen.png"), label: "♕" },
-  { alt: "Белая ладья", code: "R", imageSrc: publicPath("/pieces/default/white-rook.png"), label: "♖" },
-  { alt: "Белый слон", code: "B", imageSrc: publicPath("/pieces/default/white-bishop.png"), label: "♗" },
-  { alt: "Белый конь", code: "N", imageSrc: publicPath("/pieces/default/white-knight.png"), label: "♘" },
-  { alt: "Белая пешка", code: "P", imageSrc: publicPath("/pieces/default/white-pawn.png"), label: "♙" },
-  { alt: "Черный король", code: "k", imageSrc: publicPath("/pieces/default/black-king.png"), label: "♚" },
-  { alt: "Черный ферзь", code: "q", imageSrc: publicPath("/pieces/default/black-queen.png"), label: "♛" },
-  { alt: "Черная ладья", code: "r", imageSrc: publicPath("/pieces/default/black-rook.png"), label: "♜" },
-  { alt: "Черный слон", code: "b", imageSrc: publicPath("/pieces/default/black-bishop.png"), label: "♝" },
-  { alt: "Черный конь", code: "n", imageSrc: publicPath("/pieces/default/black-knight.png"), label: "♞" },
-  { alt: "Черная пешка", code: "p", imageSrc: publicPath("/pieces/default/black-pawn.png"), label: "♟" },
+  { alt: "Белый король", code: "K", imageSrc: publicPath("/assets/images/pieces/default/white-king.png"), label: "♔" },
+  { alt: "Белый ферзь", code: "Q", imageSrc: publicPath("/assets/images/pieces/default/white-queen.png"), label: "♕" },
+  { alt: "Белая ладья", code: "R", imageSrc: publicPath("/assets/images/pieces/default/white-rook.png"), label: "♖" },
+  { alt: "Белый слон", code: "B", imageSrc: publicPath("/assets/images/pieces/default/white-bishop.png"), label: "♗" },
+  { alt: "Белый конь", code: "N", imageSrc: publicPath("/assets/images/pieces/default/white-knight.png"), label: "♘" },
+  { alt: "Белая пешка", code: "P", imageSrc: publicPath("/assets/images/pieces/default/white-pawn.png"), label: "♙" },
+  { alt: "Черный король", code: "k", imageSrc: publicPath("/assets/images/pieces/default/black-king.png"), label: "♚" },
+  { alt: "Черный ферзь", code: "q", imageSrc: publicPath("/assets/images/pieces/default/black-queen.png"), label: "♛" },
+  { alt: "Черная ладья", code: "r", imageSrc: publicPath("/assets/images/pieces/default/black-rook.png"), label: "♜" },
+  { alt: "Черный слон", code: "b", imageSrc: publicPath("/assets/images/pieces/default/black-bishop.png"), label: "♝" },
+  { alt: "Черный конь", code: "n", imageSrc: publicPath("/assets/images/pieces/default/black-knight.png"), label: "♞" },
+  { alt: "Черная пешка", code: "p", imageSrc: publicPath("/assets/images/pieces/default/black-pawn.png"), label: "♟" },
 ];
-const RENEW_ICON_SRC = publicPath("/wall/1/renew.png");
-const SAVE_ICON_SRC = publicPath("/wall/1/save.png");
-const TEST_ICON_SRC = publicPath("/wall/1/test.png");
+const RENEW_ICON_SRC = publicPath("/assets/images/icons/renew.png");
+const SAVE_ICON_SRC = publicPath("/assets/images/icons/save.png");
+const TEST_ICON_SRC = publicPath("/assets/images/icons/test.png");
 
 export function CardFenEditor({ cards, mapDescription, mapIsPublished, mapSlug, mapTitle }: CardFenEditorProps) {
   const router = useRouter();

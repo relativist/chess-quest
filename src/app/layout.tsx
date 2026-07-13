@@ -9,11 +9,12 @@ import {getCurrentUser} from "@/lib/auth/session";
 import {getBasePath, publicPath} from "@/lib/routing/public-path";
 import packageJson from "../../package.json";
 import "./globals.css";
+import "./game-modes.css";
 
 const buildDate = (process.env.NEXT_PUBLIC_BUILD_DATE || process.env.BUILD_DATE || new Date().toISOString()).slice(0, 10);
 const buildInfo = { date: buildDate, version: packageJson.version };
 const cheyenneFont = localFont({
-  src: "../../wall/Cheyenne Infanity/CheyenneSans-Regular.ttf",
+  src: "../../assets/fonts/cheyenne-infanity/CheyenneSans-Regular.ttf",
   variable: "--font-cheyenne",
   display: "swap",
 });
@@ -22,9 +23,9 @@ export const metadata: Metadata = {
   title: "Chess Quest",
   description: "A chess quest game with map battles and position templates.",
   icons: {
-    icon: `${getBasePath()}/wall/1/favicon.png`,
-    shortcut: `${getBasePath()}/wall/1/favicon.png`,
-    apple: `${getBasePath()}/wall/1/favicon.png`,
+    icon: `${getBasePath()}/assets/images/branding/favicon.png`,
+    shortcut: `${getBasePath()}/assets/images/branding/favicon.png`,
+    apple: `${getBasePath()}/assets/images/branding/favicon.png`,
   },
 };
 
@@ -45,18 +46,19 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="ru">
       <body className={cheyenneFont.variable}>
-        <ButtonClickSound soundSrc={publicPath("/wall/click.mp3")} />
+        <ButtonClickSound soundSrc={publicPath("/assets/audio/sfx/click.mp3")} />
         <AppHeader
           buildInfo={buildInfo}
-          faviconSrc={publicPath("/wall/1/logo.png")}
+          faviconSrc={publicPath("/assets/images/branding/logo.png")}
           icons={{
-            cards: publicPath("/wall/1/cards.png"),
-            coin: publicPath("/wall/1/coin.png"),
-            exit: publicPath("/wall/1/exit.png"),
-            map: publicPath("/wall/1/map.png"),
-            user: publicPath("/wall/1/user.png"),
-            users: publicPath("/wall/1/users.png"),
-            victories: publicPath("/wall/1/victories.png"),
+            cards: publicPath("/assets/images/icons/cards.png"),
+            coin: publicPath("/assets/images/icons/coin.png"),
+            exit: publicPath("/assets/images/icons/exit.png"),
+            map: publicPath("/assets/images/icons/map.png"),
+            online: publicPath("/assets/images/icons/online.png"),
+            user: publicPath("/assets/images/icons/user.png"),
+            users: publicPath("/assets/images/icons/users.png"),
+            victories: publicPath("/assets/images/icons/victories.png"),
           }}
           leaderboardUsers={headerLeaderboardUsers}
           logout={logoutAction}

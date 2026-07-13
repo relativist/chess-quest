@@ -89,7 +89,7 @@ describe("card objective evaluator", () => {
 
 
   it("completes mate-in objective on the configured player move or earlier", () => {
-    expect(objectiveProgressLabel({ moves: 3, type: "checkmate_in_moves" }, 3)).toBe("2 / 3 ходов до мата");
+    expect(objectiveProgressLabel({ moves: 3, type: "checkmate_in_moves" }, 3, 0, 0, 1)).toBe("1 / 3 ходов использовано");
     expect(evaluateCardObjective({ moves: 3, type: "checkmate_in_moves" }, {
       completedHalfMoves: 3,
       completedPlayerMoves: 2,
@@ -98,13 +98,31 @@ describe("card objective evaluator", () => {
     })).toMatchObject({ completed: true, label: "Мат за 2 хода. Цель карточки выполнена." });
   });
 
-  it("does not complete mate-in objective after the configured player move limit", () => {
+  it("fails mate-in objective as soon as the last allowed player move ends without mate", () => {
+    expect(evaluateCardObjective({ moves: 2, type: "checkmate_in_moves" }, {
+      completedHalfMoves: 3,
+      completedPlayerMoves: 2,
+      isCheck: false,
+      isCheckmate: false,
+    })).toMatchObject({ completed: false, failed: true, label: "Лимит 2 хода исчерпан. Мат не поставлен." });
+  });
+
+  it("fails mate-in objective after the configured player move limit", () => {
     expect(evaluateCardObjective({ moves: 2, type: "checkmate_in_moves" }, {
       completedHalfMoves: 5,
       completedPlayerMoves: 3,
       isCheck: true,
       isCheckmate: true,
-    })).toMatchObject({ completed: false, label: "Мат поставлен позже лимита 2 хода." });
+    })).toMatchObject({ completed: false, failed: true, label: "Лимит 2 хода превышен." });
+  });
+
+  it("uses correct Russian move pluralization", () => {
+    expect(evaluateCardObjective({ moves: 12, type: "checkmate_in_moves" }, {
+      completedHalfMoves: 23,
+      completedPlayerMoves: 12,
+      isCheck: false,
+      isCheckmate: false,
+    })).toMatchObject({ label: "Лимит 12 ходов исчерпан. Мат не поставлен." });
   });
 
   it("completes survival after the configured half-move count", () => {

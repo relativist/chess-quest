@@ -1,9 +1,9 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { loginUser, registerUser } from "@/lib/auth/auth-store";
-import { clearSession, setSession } from "@/lib/auth/session";
-import { getAuthenticatedHomePath } from "@/lib/routing/auth-redirect";
+import {redirect} from "next/navigation";
+import {loginUser, registerUser} from "@/lib/auth/auth-store";
+import {clearSession, setSession} from "@/lib/auth/session";
+import {getPostAuthenticationPath} from "@/lib/routing/auth-redirect";
 
 export async function loginAction(formData: FormData) {
   const result = await loginUser({
@@ -16,7 +16,7 @@ export async function loginAction(formData: FormData) {
   }
 
   await setSession(result.user.id);
-  redirect(getAuthenticatedHomePath(result.user));
+  redirect(getPostAuthenticationPath(result.user));
 }
 
 export async function registerAction(formData: FormData) {
@@ -32,7 +32,7 @@ export async function registerAction(formData: FormData) {
   }
 
   await setSession(result.user.id);
-  redirect(getAuthenticatedHomePath(result.user));
+  redirect(getPostAuthenticationPath(result.user));
 }
 
 export async function demoMapEditorLoginAction() {

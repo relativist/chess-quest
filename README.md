@@ -99,6 +99,15 @@ After login as the editor, open:
 /map/editor
 ```
 
+When PostgreSQL is configured, `public.auth_accounts` is the shared credential
+table for Chess Quest and Foxy Chat. It stores normalized login identity and
+password hashes; Chess Quest keeps its game profile and progress in its own
+`User` table with the same account id. Session cookies remain application
+specific, so users sign in separately in each app. The migration copies
+existing Chess Quest users into the shared table while preserving their ids
+and password hashes. File-backed auth remains a local fallback when no
+database is configured.
+
 ## Useful Scripts
 
 ```bash

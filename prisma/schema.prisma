@@ -353,3 +353,14 @@ model OnlineRatingChange {
   @@unique([matchId, userId])
   @@index([userId, createdAt])
 }
+
+model AuthAccount {
+  id           String   @id
+  login        String   @unique
+  email        String?  @unique
+  displayName  String   @map("display_name")
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("auth_accounts")
+}
